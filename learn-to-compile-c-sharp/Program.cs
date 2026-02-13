@@ -2,10 +2,12 @@
 
 using System.Text.Json;
 
-class Program {
-    static void Main() {
+class Program
+{
+    static void Main()
+    {
         string json = Console.In.ReadToEnd();
-        var tokens = JsonSerializer.Deserialize<List<Token>>(json);
+        var tokens = JsonSerializer.Deserialize<List<Token>>(jsonString);
 
         var parser = new Parser();
         var ast = parser.Parse(tokens);
