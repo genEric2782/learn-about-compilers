@@ -14,19 +14,40 @@ public class Parser
     // is current position is less than the size of the list of tokens get token at value position
     private Token currentToken => _position < _tokens.Count ? _tokens[_position] : null;
 
+    private Token peekNextToken => (_position + 1) < _tokens.Count ? _tokens[_position++] : null;
+
     private Token Consume()
     {
         return _tokens[_position++];
     }
 
+
+
     public ASTNode ParseExpression()
     {
 
-        var left = createParsedToken();
+        var first = createParsedToken();
 
-        while (currentToken != null && currentToken.Type)
+        // Giant if statement? 
+
+        while (currentToken != null)
         {
+            if (currentToken.NodeType == TokenKind.Integer.ToString()) // gross 
+            {
+                // for now if this currentoken is an int its safe to assume that for a proper expression the next token needs to be an operation 
+                if (peekNextToken.Span.Literal != )
+                {
 
+                }
+            }
+            else if ()
+            {
+
+            }
+            else
+            {
+
+            }
         }
     }
 
@@ -34,10 +55,13 @@ public class Parser
     {
         var token = Consume();
 
+
+
+
         return new ASTNode
         {
             NodeType = token.kind,
-            Value = toekn.value
+            Value = token.Span.Literal
         };
     }
 }
