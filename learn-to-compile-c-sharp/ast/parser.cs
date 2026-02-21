@@ -26,19 +26,28 @@ public class Parser
     public ASTNode ParseExpression()
     {
 
-        var first = createParsedToken();
+        var Node1 = createParsedTokenNode();
 
         // Giant if statement? 
 
         while (currentToken != null)
         {
-            if (currentToken.NodeType == TokenKind.Integer.ToString()) // gross 
+            //if (currentToken.NodeType == TokenKind.Integer.ToString()) // gross
+            if (Enum.IsDefind(typeof(Operators), currentToken.Kind))
             {
                 // for now if this currentoken is an int its safe to assume that for a proper expression the next token needs to be an operation 
-                if (peekNextToken.Span.Literal != )
+                if (peekNextToken.Span.Literal == TokenKind.Integer.ToString())
+                {
+                    var operate = Consume();
+
+                    var Node2 = createParsedTokenNode();
+
+                    createParsedTreeNode(operate, Node1, Node2);
+                }
+                else if ()
                 {
 
-                }
+                }// Another operator or paraen
             }
             else if ()
             {
@@ -51,17 +60,27 @@ public class Parser
         }
     }
 
-    public createParsedToken()
+    // Creates a Node that will later be added to a tree 
+    public createParsedTokenNode()
     {
         var token = Consume();
-
-
-
 
         return new ASTNode
         {
             NodeType = token.kind,
             Value = token.Span.Literal
+        };
+    }
+
+    // Creates a node with children 
+    public createParsedTreeNode(Token head, ASTNode LNode, ASTNode RNode)
+    {
+
+        return new ASTNode
+        {
+            NodeType = head.kind,
+            Value = head.Span.Literal,
+            Children = new List<ASTNode> { LNode, RNode }
         };
     }
 }

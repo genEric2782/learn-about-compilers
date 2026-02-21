@@ -10,6 +10,13 @@ public enum TokenKind
     Bad,
 }
 
+public enum Operators
+{
+    Plus,
+    Minus,
+    Equals,
+}
+
 public class TextSpan
 {
     public int Start { get; set; }
