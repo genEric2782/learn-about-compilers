@@ -4,6 +4,8 @@ public enum TokenKind
     // Uinterger(u64),
     Plus,
     Minus,
+    Multiply,
+    Divide,
     Equals,
     Whitespace,
     EOF,
@@ -14,7 +16,8 @@ public enum Operators
 {
     Plus,
     Minus,
-    Equals,
+    Multiply,
+    Divide,
 }
 
 public class TextSpan
