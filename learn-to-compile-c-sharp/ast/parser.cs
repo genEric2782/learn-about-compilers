@@ -49,23 +49,11 @@ public class Parser
                 // TODO maybe needs updating ?
                 var operate = Consume();
 
-                createParsedTreeNode(operate, Node);
+                Node = createParsedASTreeNode(operate, Node);
 
                 if (peekNextToken.Kind == TokenKind.Integer)
                 {
-                    //TODO probalby dont want to create the node yet but also dont want to consume this number....
-                    var Node2 = createParsedTokenNode();
-
-                    // Is this where i check for precedence? 
-                    if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
-                    {
-                        // TODO need to figure out precedence might not want to recurse here?  
-                        ParseExpression();
-                    }
-                    // TODO might need different node add methods for precendence 
-                    
-
-                    // TODO return once tree has been built 
+                    // TODO 
 
                 }
                 else
@@ -74,25 +62,6 @@ public class Parser
                     throw new System.Exception("Invalid expression was expecting an integer");
                 }
 
-                // Make sure there insnt another operand in the string before we make this part of the tree
-                if (Enum.IsDefined(typeof(Operators), peekNextToken.Kind))
-                {
-                    // TODO       
-                    var something = ParseExpression();
-
-
-                    // Old
-                    // var nextOp = Consume();
-
-                    //var Node3 = createParsedTokenNode();
-
-                    //createParsedTreeNode(nextOp, Node2, Node3);
-                }
-                else
-                {
-                    // TODO 
-                    createParsedTreeNode(operate, Node1, Node2);
-                }
             }
             else
             {
@@ -127,10 +96,18 @@ public class Parser
         {
             RNode = createParsedTokenNode();
 
+            // TODO exponents and paren
             if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
             {
                 var precedence = Consume();
-                createParsedTreeNode(precedence, LNode, RNode);
+                var rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
+
+                return new ASTNode
+                {
+                    NodeType = head.Kind.ToString(),
+                    Value = head.Span.Literal,
+                    Children = new List<ASTNode> { LNode, rightNode }
+                };
             }
             else
             {
@@ -143,7 +120,7 @@ public class Parser
             }
         }
         // RNode is defined  
-        else
+        else // this might actually need to be a throw 
         {
             return new ASTNode
             {
@@ -153,55 +130,21 @@ public class Parser
             };
         }
 
-        // return new ASTNode
-        // {
-        //     NodeType = head.Kind.ToString(),
-        //     Value = head.Span.Literal,
-        //     Children = new List<ASTNode> { LNode, RNode }
-        // };
     }
 
 // TODO
-    public ASTNode createParsedMDTreeNode(Token head, ASTNode? LNode, ASTNode? RNode = null)
+    public ASTNode createParsedMDTreeNode(Token head, ASTNode LNode, ASTNode RNode)
     {
 
         // TODO handle precedence in here? 
-        // Check for precidence i.e. if the next token is a * or / operator
-        if(RNode is null && Enum.IsDefined(typeof(Operators), currentToken.Kind))
-        {
-            RNode = createParsedTokenNode();
+        // Check for precidence i.e. exponenets and paraen
 
-            if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
-            {
-                var precedence = Consume();
-                createParsedTreeNode(precedence, LNode, RNode);
-            }
-            else
-            {
-                return new ASTNode
-                {
-                    NodeType = head.Kind.ToString(),
-                    Value = head.Span.Literal,
-                    Children = new List<ASTNode> { LNode, RNode }
-                };
-            }
-        }
-        // RNode is defined  
-        else
+        return new ASTNode
         {
-            return new ASTNode
-            {
-                NodeType = head.Kind.ToString(),
-                Value = head.Span.Literal,
-                Children = new List<ASTNode> { LNode, RNode }
-            };
-        }
+            NodeType = head.Kind.ToString(),
+            Value = head.Span.Literal,
+            Children = new List<ASTNode> { LNode, RNode }
+        };
 
-        // return new ASTNode
-        // {
-        //     NodeType = head.Kind.ToString(),
-        //     Value = head.Span.Literal,
-        //     Children = new List<ASTNode> { LNode, RNode }
-        // };
     }
 }
