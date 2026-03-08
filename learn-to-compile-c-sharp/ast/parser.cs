@@ -8,17 +8,17 @@ public class Parser
     public Parser(List<Token> tokens)
     {
         _tokens = tokens;
-        _position = 0; // Start at 0?
-        Consume();
-        // Should i just consume the first token at construction? 
+        _position = 0; // Maybe dont conusme and start a -1 ? 
+        // Should i just consume the first token at construction? v
+        // Consume();
+        
     }
 
     // is current position is less than the size of the list of tokens get token at value position
-    private Token currentToken => _position < _tokens.Count ? _tokens[_position] : null;
+    private Token? currentToken => _position < _tokens.Count ? _tokens[_position] : null;
 
-    // TODO this wont work with white space fix for later 
     // private Token peekNextToken => (_position + 1) < _tokens.Count ? _tokens[_position++] : null;
-    private Token peekNextToken => (_position + 1) < _tokens.Count ? (_tokens[_position++].Kind == TokenKind.Whitespace ? _tokens[_position + 2] : _tokens[_position++]) : null;
+    private Token? peekNextToken => (_position + 1) < _tokens.Count ? (_tokens[_position++].Kind == TokenKind.Whitespace ? _tokens[_position + 2] : _tokens[_position++]) : null;
 
 
     private Token Consume()
@@ -36,18 +36,9 @@ public class Parser
 
     public ASTNode ParseExpression()
     {
-
-        /*
-          if (!Enum.IsDefind(typeof(Operators), peekNextToken.Kind))
-          {
-              var Node1 = createParsedTokenNode();
-          }
-          else
-          {
-              // TODO Do i want to consume here ?
-              var foo = Consume();
-          }
-        */
+        // Starting node 
+        var Node = createParsedTokenNode();
+    
         // Current scheme doesnt do order of operations well.... i.e. not at all 
         while (currentToken.Kind != TokenKind.EOF)
         {
@@ -58,7 +49,9 @@ public class Parser
                 // TODO maybe needs updating ?
                 var operate = Consume();
 
-                if (peekNextToken.Kind.ToString() == TokenKind.Integer.ToString())
+                createParsedTreeNode(operate, Node);
+
+                if (peekNextToken.Kind == TokenKind.Integer)
                 {
                     //TODO probalby dont want to create the node yet but also dont want to consume this number....
                     var Node2 = createParsedTokenNode();
@@ -70,7 +63,7 @@ public class Parser
                         ParseExpression();
                     }
                     // TODO might need different node add methods for precendence 
-                    createParsedTreeNode(operate, Node1, Node2);
+                    
 
                     // TODO return once tree has been built 
 
@@ -124,17 +117,91 @@ public class Parser
     }
 
     // Creates a node with children 
-    public ASTNode createParsedTreeNode(Token head, ASTNode LNode, ASTNode RNode)
+    // TODO
+    public ASTNode createParsedASTreeNode(Token head, ASTNode? LNode, ASTNode? RNode = null)
     {
 
         // TODO handle precedence in here? 
-        // CHeck for precidence i.e. if the next token is a * or / operator
-
-        return new ASTNode
+        // Check for precidence i.e. if the next token is a * or / operator
+        if(RNode is null && Enum.IsDefined(typeof(Operators), currentToken.Kind))
         {
-            NodeType = head.Kind.ToString(),
-            Value = head.Span.Literal,
-            Children = new List<ASTNode> { LNode, RNode }
-        };
+            RNode = createParsedTokenNode();
+
+            if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
+            {
+                var precedence = Consume();
+                createParsedTreeNode(precedence, LNode, RNode);
+            }
+            else
+            {
+                return new ASTNode
+                {
+                    NodeType = head.Kind.ToString(),
+                    Value = head.Span.Literal,
+                    Children = new List<ASTNode> { LNode, RNode }
+                };
+            }
+        }
+        // RNode is defined  
+        else
+        {
+            return new ASTNode
+            {
+                NodeType = head.Kind.ToString(),
+                Value = head.Span.Literal,
+                Children = new List<ASTNode> { LNode, RNode }
+            };
+        }
+
+        // return new ASTNode
+        // {
+        //     NodeType = head.Kind.ToString(),
+        //     Value = head.Span.Literal,
+        //     Children = new List<ASTNode> { LNode, RNode }
+        // };
+    }
+
+// TODO
+    public ASTNode createParsedMDTreeNode(Token head, ASTNode? LNode, ASTNode? RNode = null)
+    {
+
+        // TODO handle precedence in here? 
+        // Check for precidence i.e. if the next token is a * or / operator
+        if(RNode is null && Enum.IsDefined(typeof(Operators), currentToken.Kind))
+        {
+            RNode = createParsedTokenNode();
+
+            if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
+            {
+                var precedence = Consume();
+                createParsedTreeNode(precedence, LNode, RNode);
+            }
+            else
+            {
+                return new ASTNode
+                {
+                    NodeType = head.Kind.ToString(),
+                    Value = head.Span.Literal,
+                    Children = new List<ASTNode> { LNode, RNode }
+                };
+            }
+        }
+        // RNode is defined  
+        else
+        {
+            return new ASTNode
+            {
+                NodeType = head.Kind.ToString(),
+                Value = head.Span.Literal,
+                Children = new List<ASTNode> { LNode, RNode }
+            };
+        }
+
+        // return new ASTNode
+        // {
+        //     NodeType = head.Kind.ToString(),
+        //     Value = head.Span.Literal,
+        //     Children = new List<ASTNode> { LNode, RNode }
+        // };
     }
 }

@@ -9,8 +9,8 @@ class Program
         string json = Console.In.ReadToEnd();
         var tokens = JsonSerializer.Deserialize<List<Token>>(jsonString);
 
-        var parser = new Parser();
-        var ast = parser.Parse(tokens);
+        var parser = new Parser(tokens);
+        var ast = parser.ParseExpression(); //.Parse(tokens);
 
         Console.WriteLine(JsonSerializer.Serialize(ast));
     }
