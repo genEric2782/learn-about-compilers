@@ -7,7 +7,7 @@ class Program
     static void Main()
     {
         string json = Console.In.ReadToEnd();
-        var tokens = JsonSerializer.Deserialize<List<Token>>(jsonString);
+        var tokens = JsonSerializer.Deserialize<List<Token>>(json);
 
         var parser = new Parser(tokens);
         var ast = parser.ParseExpression(); //.Parse(tokens);

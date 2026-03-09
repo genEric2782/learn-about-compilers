@@ -58,9 +58,16 @@ public class Parser
                     Node = createParsedASTreeNode(nextOperator, nextNode);
                 }
                 // No next operator just one last number 
-                else 
+                else if (TokenKind.EOF == peekNextToken.Kind)
                 {
-                    // TODO: attach single node to tree 
+                    // TODO: attach single node to tree?
+                    ASTNode finalNode = createParsedTokenNode();
+                    Node.Children.Add(finalNode);
+                } 
+                else
+                {
+                    // TODO IDK 
+                    throw new System.Exception("Why Did I Get Here?");
                 }
   
             }
@@ -94,30 +101,44 @@ public class Parser
         // Check for precidence i.e. if the next token is a * or / operator
         if(RNode is null && Enum.IsDefined(typeof(Operators), currentToken.Kind))
         {
-            RNode = createParsedTokenNode();
-
-            // TODO exponents and paren
-            if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
+            // Check to make sre there is another node first 
+            if (TokenKind.EOF != peekNextToken.Kind)
             {
-                Token precedence = Consume();
-                ASTNode rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
-
-                return new ASTNode
+                RNode = createParsedTokenNode();   
+                // TODO exponents and paren
+                if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
                 {
-                    NodeType = head.Kind.ToString(),
-                    Value = head.Span.Literal,
-                    Children = new List<ASTNode> { LNode, rightNode }
-                };
-            }
+                    Token precedence = Consume();
+                    ASTNode rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
+
+                    return new ASTNode
+                    {
+                        NodeType = head.Kind.ToString(),
+                        Value = head.Span.Literal,
+                        Children = new List<ASTNode> { LNode, rightNode }
+                    };
+                }
+                else
+                {
+                    return new ASTNode
+                    {
+                        NodeType = head.Kind.ToString(),
+                        Value = head.Span.Literal,
+                        Children = new List<ASTNode> { LNode, RNode }
+                    };
+                } 
+            } 
+            // Add final operation i.e .. + 5
             else
             {
                 return new ASTNode
                 {
                     NodeType = head.Kind.ToString(),
                     Value = head.Span.Literal,
-                    Children = new List<ASTNode> { LNode, RNode }
+                    Children = new List<ASTNode> { LNode }
                 };
             }
+            
         }
         // RNode is defined  
         else // this might actually need to be a throw 
