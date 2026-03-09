@@ -8,10 +8,7 @@ public class Parser
     public Parser(List<Token> tokens)
     {
         _tokens = tokens;
-        _position = 0; // Maybe dont conusme and start a -1 ? 
-        // Should i just consume the first token at construction? v
-        // Consume();
-        
+        _position = 0;       
     }
 
     // is current position is less than the size of the list of tokens get token at value position
@@ -37,7 +34,7 @@ public class Parser
     public ASTNode ParseExpression()
     {
         // Starting node 
-        var Node = createParsedTokenNode();
+        ASTNode Node = createParsedTokenNode();
     
         // Current scheme doesnt do order of operations well.... i.e. not at all 
         while (currentToken.Kind != TokenKind.EOF)
@@ -46,22 +43,26 @@ public class Parser
             // which implies the next token will be an operator (error otherwise) 
             if (Enum.IsDefined(typeof(Operators), peekNextToken.Kind))
             {
-                // TODO maybe needs updating ?
-                var operate = Consume();
+                Token operate = Consume();
 
                 Node = createParsedASTreeNode(operate, Node);
 
-                if (peekNextToken.Kind == TokenKind.Integer)
+            } 
+            else if (TokenKind.Integer == peekNextToken.Kind)
+            {
+                ASTNode nextNode = createParsedTokenNode(); 
+                // if there is another operator after 
+                if(Enum.IsDefined(typeof(Operators), peekNextToken.Kind)) 
                 {
-                    // TODO 
-
+                    Token nextOperator = Consume();
+                    Node = createParsedASTreeNode(nextOperator, nextNode);
                 }
-                else
+                // No next operator just one last number 
+                else 
                 {
-                    // TODO create custom exceptions 
-                    throw new System.Exception("Invalid expression was expecting an integer");
+                    // TODO: attach single node to tree 
                 }
-
+  
             }
             else
             {
@@ -69,14 +70,14 @@ public class Parser
             }
         }
         // TODO return the AST
-        return
+        return Node;
     }
 
 
     // Creates a Node that will later be added to a tree 
     public ASTNode createParsedTokenNode()
     {
-        var token = Consume();
+        Token token = Consume();
 
         return new ASTNode
         {
@@ -86,7 +87,6 @@ public class Parser
     }
 
     // Creates a node with children 
-    // TODO
     public ASTNode createParsedASTreeNode(Token head, ASTNode? LNode, ASTNode? RNode = null)
     {
 
@@ -99,8 +99,8 @@ public class Parser
             // TODO exponents and paren
             if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
             {
-                var precedence = Consume();
-                var rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
+                Token precedence = Consume();
+                ASTNode rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
 
                 return new ASTNode
                 {
@@ -132,7 +132,6 @@ public class Parser
 
     }
 
-// TODO
     public ASTNode createParsedMDTreeNode(Token head, ASTNode LNode, ASTNode RNode)
     {
 
