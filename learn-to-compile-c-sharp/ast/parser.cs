@@ -8,26 +8,28 @@ public class Parser
     public Parser(List<Token> tokens)
     {
         _tokens = tokens;
-        _position = 0;       
+        _position = -1;       
     }
 
-    // is current position is less than the size of the list of tokens get token at value position
+    // if current position is less than the size of the list of tokens get token at value position
     private Token? currentToken => _position < _tokens.Count ? _tokens[_position] : null;
 
-    // private Token peekNextToken => (_position + 1) < _tokens.Count ? _tokens[_position++] : null;
-    private Token? peekNextToken => (_position + 1) < _tokens.Count ? (_tokens[_position++].Kind == TokenKind.Whitespace ? _tokens[_position + 2] : _tokens[_position++]) : null;
+    // Extra logic to avoid whitespace tokens for now 
+    private Token? peekNextToken => (_position + 1) < _tokens.Count ? (_tokens[_position + 1].Kind.Type == TokenKindEnum.Whitespace.ToString() ? _tokens[_position + 2] : _tokens[_position++]) : null;
 
 
     private Token Consume()
     {
-        // Ignore whitespace token for now if i need it later remoe this and do something else
-        if (_tokens[_position++].Kind.ToString() == TokenKind.Whitespace.ToString())
+        // Ignore whitespace token for now
+        if (_tokens[_position + 1].Kind.Type == TokenKindEnum.Whitespace.ToString())
         {
-            return _tokens[_position + 2];
+            _position = _position + 2;
+            return _tokens[_position];
         }
         else
         {
-            return _tokens[_position++];
+            _position = _position + 1;
+            return _tokens[_position];
         }
     }
 
@@ -36,37 +38,40 @@ public class Parser
         // Starting node 
         ASTNode Node = createParsedTokenNode();
     
-        // Current scheme doesnt do order of operations well.... i.e. not at all 
-        while (currentToken.Kind != TokenKind.EOF)
+        while (currentToken.Kind.Type != TokenKindEnum.EOF.ToString())
         {
             // Will need additional or better logic when paraens are added for now first token should always be int (error otherwise)
             // which implies the next token will be an operator (error otherwise) 
-            if (Enum.IsDefined(typeof(Operators), peekNextToken.Kind))
+            if (Enum.IsDefined(typeof(Operators), peekNextToken?.Kind.Type))
             {
                 Token operate = Consume();
 
                 Node = createParsedASTreeNode(operate, Node);
 
             } 
-            else if (TokenKind.Integer == peekNextToken.Kind)
+            else if (TokenKindEnum.Integer.ToString() == peekNextToken.Kind.Type)
             {
                 ASTNode nextNode = createParsedTokenNode(); 
                 // if there is another operator after 
-                if(Enum.IsDefined(typeof(Operators), peekNextToken.Kind)) 
+                if(Enum.IsDefined(typeof(Operators), peekNextToken?.Kind.Type)) 
                 {
                     Token nextOperator = Consume();
                     Node = createParsedASTreeNode(nextOperator, nextNode);
                 }
                 // No next operator just one last number 
-                else if (TokenKind.EOF == peekNextToken.Kind)
+                else if (TokenKindEnum.EOF.ToString() == peekNextToken?.Kind.Type)
                 {
                     // TODO: attach single node to tree?
                     ASTNode finalNode = createParsedTokenNode();
                     Node.Children.Add(finalNode);
                 } 
+                else if (TokenKindEnum.EOF.ToString() == currentToken.Kind.Type)
+                {
+                    Node.Children.Add(nextNode);
+                }
                 else
                 {
-                    // TODO IDK 
+                    // TODO: Create exceptions 
                     throw new System.Exception("Why Did I Get Here?");
                 }
   
@@ -76,7 +81,6 @@ public class Parser
                 throw new System.Exception("Invalid expression was expecting an Operator");
             }
         }
-        // TODO return the AST
         return Node;
     }
 
@@ -88,7 +92,7 @@ public class Parser
 
         return new ASTNode
         {
-            NodeType = token.Kind.ToString(),
+            NodeType = token.Kind.Type,
             Value = token.Span.Literal
         };
     }
@@ -97,23 +101,22 @@ public class Parser
     public ASTNode createParsedASTreeNode(Token head, ASTNode? LNode, ASTNode? RNode = null)
     {
 
-        // TODO handle precedence in here? 
         // Check for precidence i.e. if the next token is a * or / operator
-        if(RNode is null && Enum.IsDefined(typeof(Operators), currentToken.Kind))
+        if(RNode is null && Enum.IsDefined(typeof(Operators), currentToken.Kind.Type))
         {
             // Check to make sre there is another node first 
-            if (TokenKind.EOF != peekNextToken.Kind)
+            if (TokenKindEnum.EOF.ToString() != peekNextToken?.Kind.Type)
             {
                 RNode = createParsedTokenNode();   
                 // TODO exponents and paren
-                if (peekNextToken.Kind == TokenKind.Multiply || peekNextToken.Kind == TokenKind.Divide)
+                if (peekNextToken?.Kind.Type == TokenKindEnum.Multiply.ToString() || peekNextToken?.Kind.Type == TokenKindEnum.Divide.ToString())
                 {
                     Token precedence = Consume();
                     ASTNode rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
 
                     return new ASTNode
                     {
-                        NodeType = head.Kind.ToString(),
+                        NodeType = head.Kind.Type,
                         Value = head.Span.Literal,
                         Children = new List<ASTNode> { LNode, rightNode }
                     };
@@ -122,7 +125,7 @@ public class Parser
                 {
                     return new ASTNode
                     {
-                        NodeType = head.Kind.ToString(),
+                        NodeType = head.Kind.Type,
                         Value = head.Span.Literal,
                         Children = new List<ASTNode> { LNode, RNode }
                     };
@@ -133,7 +136,7 @@ public class Parser
             {
                 return new ASTNode
                 {
-                    NodeType = head.Kind.ToString(),
+                    NodeType = head.Kind.Type,
                     Value = head.Span.Literal,
                     Children = new List<ASTNode> { LNode }
                 };
@@ -141,11 +144,11 @@ public class Parser
             
         }
         // RNode is defined  
-        else // this might actually need to be a throw 
+        else
         {
             return new ASTNode
             {
-                NodeType = head.Kind.ToString(),
+                NodeType = head.Kind.Type,
                 Value = head.Span.Literal,
                 Children = new List<ASTNode> { LNode, RNode }
             };
@@ -155,16 +158,11 @@ public class Parser
 
     public ASTNode createParsedMDTreeNode(Token head, ASTNode LNode, ASTNode RNode)
     {
-
-        // TODO handle precedence in here? 
-        // Check for precidence i.e. exponenets and paraen
-
         return new ASTNode
         {
-            NodeType = head.Kind.ToString(),
+            NodeType = head.Kind.Type,
             Value = head.Span.Literal,
             Children = new List<ASTNode> { LNode, RNode }
         };
-
     }
 }

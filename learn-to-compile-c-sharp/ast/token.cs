@@ -1,4 +1,4 @@
-public enum TokenKind
+public enum TokenKindEnum
 {
     Integer,
     // Uinterger(u64),
@@ -18,6 +18,12 @@ public enum Operators
     Minus,
     Multiply,
     Divide,
+}
+
+public class TokenKind
+{
+    public string Type { get; set; }
+    public long? value { get; set; }
 }
 
 public class TextSpan

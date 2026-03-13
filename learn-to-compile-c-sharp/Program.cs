@@ -1,17 +1,46 @@
-﻿// TODO 
-
+﻿using System;
 using System.Text.Json;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 
 class Program
 {
-    static void Main()
+    static async Task Main()
     {
-        string json = Console.In.ReadToEnd();
-        var tokens = JsonSerializer.Deserialize<List<Token>>(json);
+
+        // Start Process to Read lexed output from stdout 
+        // Driver code for testing parser
+        var psi = new ProcessStartInfo
+        {
+            FileName = "cargo",
+            Arguments = "run --quiet",
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = @""
+        };
+
+        var process = Process.Start(psi);
+
+        string output = await process.StandardOutput.ReadToEndAsync();
+
+        process.WaitForExit();
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            WriteIndented = true,
+        };
+
+        var tokens = JsonSerializer.Deserialize<List<Token>>(output, options);
+
 
         var parser = new Parser(tokens);
-        var ast = parser.ParseExpression(); //.Parse(tokens);
+        var ast = parser.ParseExpression();
 
-        Console.WriteLine(JsonSerializer.Serialize(ast));
+        // Console.WriteLine("This is it ------------------------------------");
+        Console.WriteLine(JsonSerializer.Serialize(ast, options));
     }
 }

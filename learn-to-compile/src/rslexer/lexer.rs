@@ -17,17 +17,20 @@ impl TextSpan {
         }
     }
 
-    pub fn length(&self) -> usize {
-        self.end - self.start
-    }
+    // pub fn length(&self) -> usize {
+    //     self.end - self.start
+    // }
 }
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type", content = "value")]
 pub enum TokenKind {
     Integer(i64),
     // Uinterger(u64),
     Plus,
     Minus,
+    Multiply,
+    Divide,
     Equals,
     Whitespace,
     EOF,
@@ -122,7 +125,7 @@ impl<'a> Lexer<'a> {
 
     fn is_valid_punctuation(c: &char) -> bool {
         match c {
-            '+' | '-' | '=' => true,
+            '+' | '-' | '*' | '/' | '=' => true,
             _ => false,
         }
     }
@@ -157,6 +160,14 @@ impl<'a> Lexer<'a> {
                     }
                     '-' => {
                         ptoken = TokenKind::Minus;
+                        self.idx += 1;
+                    }
+                    '*' => {
+                        ptoken = TokenKind::Multiply;
+                        self.idx += 1;
+                    }
+                    '/' => {
+                        ptoken = TokenKind::Divide;
                         self.idx += 1;
                     }
                     '=' => {
