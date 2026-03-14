@@ -49,7 +49,7 @@ public class Parser
                 Node = createParsedASTreeNode(operate, Node);
 
             } 
-            else if (TokenKindEnum.Integer.ToString() == peekNextToken.Kind.Type)
+            else if (TokenKindEnum.Integer.ToString() == peekNextToken?.Kind.Type)
             {
                 ASTNode nextNode = createParsedTokenNode(); 
                 // if there is another operator after 
@@ -76,6 +76,10 @@ public class Parser
                 }
   
             }
+            else if (TokenKindEnum.EOF.ToString() == peekNextToken?.Kind.Type || TokenKindEnum.EOF.ToString() == currentToken.Kind.Type)
+            {
+                break;
+            }
             else
             {
                 throw new System.Exception("Invalid expression was expecting an Operator");
@@ -98,7 +102,7 @@ public class Parser
     }
 
     // Creates a node with children 
-    public ASTNode createParsedASTreeNode(Token head, ASTNode? LNode, ASTNode? RNode = null)
+    public ASTNode createParsedASTreeNode(Token head, ASTNode LNode, ASTNode? RNode = null)
     {
 
         // Check for precidence i.e. if the next token is a * or / operator
@@ -107,12 +111,15 @@ public class Parser
             // Check to make sre there is another node first 
             if (TokenKindEnum.EOF.ToString() != peekNextToken?.Kind.Type)
             {
-                RNode = createParsedTokenNode();   
+                ASTNode tmpNode = createParsedTokenNode();   
                 // TODO exponents and paren
                 if (peekNextToken?.Kind.Type == TokenKindEnum.Multiply.ToString() || peekNextToken?.Kind.Type == TokenKindEnum.Divide.ToString())
                 {
                     Token precedence = Consume();
-                    ASTNode rightNode = createParsedMDTreeNode(precedence, LNode, RNode);
+
+                    RNode = createParsedTokenNode();
+
+                    ASTNode rightNode = createParsedMDTreeNode(precedence, tmpNode, RNode);
 
                     return new ASTNode
                     {
@@ -127,7 +134,7 @@ public class Parser
                     {
                         NodeType = head.Kind.Type,
                         Value = head.Span.Literal,
-                        Children = new List<ASTNode> { LNode, RNode }
+                        Children = new List<ASTNode> { LNode, tmpNode }
                     };
                 } 
             } 

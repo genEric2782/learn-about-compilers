@@ -18,7 +18,7 @@ class Program
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            WorkingDirectory = @""
+            WorkingDirectory = @"/home/generic/compiler_project/learn-about-compilers/learn-to-compile"
         };
 
         var process = Process.Start(psi);
