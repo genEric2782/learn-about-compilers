@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 class Program
 {
@@ -25,7 +26,15 @@ class Program
         var parser = new Parser(tokens);
         var ast = parser.ParseExpression();
 
+        using FileStream createStream = File.Create(@"/home/generic/compiler_project/learn-about-compilers/ASTree.json");
+
+        await JsonSerializer.SerializeAsync(createStream, ast, options);
+        await createStream.DisposeAsync();
+
         // Console.WriteLine("This is it ------------------------------------");
-        Console.WriteLine(JsonSerializer.Serialize(ast, options));
+        // Console.WriteLine(JsonSerializer.Serialize(ast, options));
+
+
+        // TODO: Write to Json file
     }
 }

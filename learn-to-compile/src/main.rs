@@ -11,7 +11,7 @@ mod rslexer;
 // }
 
 fn main() {
-    let input = "7 + 5 + 4 + 3"; // Test string 
+    let input = "7 + 5"; // Test string 
     // let mut stdout = io::stdout();
 
     let mut lexer = rslexer::lexer::Lexer::new(input);
