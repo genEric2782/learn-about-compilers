@@ -4,12 +4,12 @@ abstract class TACInstr
 
 // Class definition also servers as the primary constructor
 // in scala var (mutable) val (immutable)
-case class TACOp(var op: String, var arg1: String = "", var arg2: String = "", var result: String ="") extends TACInstr
+case class TACOp(var tacTempValue: String, var op: String, var arg1: String = "", var arg2: String = "") extends TACInstr
 {
 
 }
 
-case class TACConst(var result: String, var value: String) extends TACInstr 
+case class TACConst(var tacTempValue: String, var value: String) extends TACInstr 
 {
 
 }

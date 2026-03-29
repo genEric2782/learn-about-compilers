@@ -9,5 +9,9 @@ object Main {
     // static methods defined in an object as opposed to a class do not need to be instantiated
     val ASTObject = JsonASTReader.readJsonASTFile()
     println(ASTObject)
+
+    var tacRepresentation = new IRConverter
+    val _ = tacRepresentation.generateTacInstrFromAST(ASTObject)
+    tacRepresentation.printTac(tacRepresentation.tacInstrList)
   }
 }
