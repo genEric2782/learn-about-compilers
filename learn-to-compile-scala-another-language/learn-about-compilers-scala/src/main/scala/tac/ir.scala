@@ -2,10 +2,12 @@ package tac
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Stack
+import os._
 
 class IRConverter 
 {
     // TODO Do proper getting and setting for this list
+    val outputFilePath = os.Path("../../Tac.txt", os.pwd)
     var tacInstrList = ListBuffer.empty[(TACInstr)]
     private var tmpFortmp = Stack[String]()
     private var TacTemp = new TACTempGenerator()
@@ -45,8 +47,10 @@ class IRConverter
         tacInstr.foreach(instr => instr match {
             case TACConst(tmp, v) => 
                 println(s"${tmp} = ${v}")
+                os.write.append(outputFilePath, s"${tmp} = ${v}\n")
             case TACOp(tmp, o, v1, v2) =>
                 println(s"${tmp} = ${v1} ${o} ${v2}")
+                os.write.append(outputFilePath, s"${tmp} = ${v1} ${o} ${v2}\n")
             case _ => 
                 println("Whoops")
         })
