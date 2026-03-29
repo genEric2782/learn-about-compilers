@@ -28,7 +28,7 @@ fn main() {
 
     let mut child = Command::new("dotnet")
         .arg("run")
-        .current_dir("/home/generic/compiler_project/learn-about-compilers/learn-to-compile-c-sharp")
+        .current_dir("/home/generic/compiler_project/learn-about-compilers/learn-to-compile-parser-c#")
         .stdin(Stdio::piped())
         .stdout(Stdio::inherit())
         .spawn()
