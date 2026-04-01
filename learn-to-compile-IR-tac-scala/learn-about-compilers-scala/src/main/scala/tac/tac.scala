@@ -2,6 +2,9 @@ package tac // package is like a name space
 
 import upickle.default._
 
+// TODO Explain all of this 
+// Sealed keyword is a special scala keyword esstentially telling the compiler all classes that inhierit from 
+// this calls are in the same file helps compiler pattern match 
 sealed abstract class TACInstr
 object TACInstr
 {
@@ -31,15 +34,14 @@ object OPCodes extends Enumeration
     type OPCode = Value 
     val LOAD_CONSTANT, ADD = Value 
 
-    // TODO Learn what this does 
+    // This is essentailly taking my enumaeration and converting it to a string for the json library to properly seraailzie
+    // the .bimap is creatinga way to convert between the ReadWriter for the enum and the ReadWriter needed for the string
     implicit val opcodeRW: ReadWriter[OPCodes.Value] =
     readwriter[String].bimap[OPCodes.Value](
         _.toString,
         OPCodes.withName
     )
 }
-
-
 
 case class InstructionMetaData(var opcode: OPCodes.OPCode, var tacvar: TACInstr)
 

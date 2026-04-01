@@ -10,6 +10,7 @@ class IRConverter
     // TODO Do proper getting and setting for this list
     val outputFilePath = os.Path("../../TacJson.json", os.pwd)
     var tacInstrList = ListBuffer.empty[(TACInstr)]
+    var InstrJsonList = ListBuffer.empty[(InstructionMetaData)]
     private var tmpFortmp = Stack[String]()
     private var TacTemp = new TACTempGenerator()
     val operators = List("Plus", "Minus", "Multiply", "Divide")
@@ -64,16 +65,22 @@ class IRConverter
         tacInstr.foreach(instr => instr match {
             case TACConst(tmp, v) => 
                 val obj = InstructionMetaData(OPCodes.LOAD_CONSTANT, instr)
-                val jsonString: String = upickle.default.write(obj, indent = 4)
+                // val jsonString: String = upickle.default.write(obj, indent = 4)
+                InstrJsonList.addOne(obj)
                 // println(jsonString)
-                os.write.append(outputFilePath, s"${jsonString}\n")
+                // os.write.append(outputFilePath, s"${jsonString}\n")
             case TACOp(tmp, o, v1, v2) =>
                 val obj = InstructionMetaData(OPCodes.ADD, instr)
-                val jsonString: String = upickle.default.write(obj, indent = 4)
+                // val jsonString: String = upickle.default.write(obj, indent = 4)
+                InstrJsonList.addOne(obj)
                 // println(jsonString)
-                os.write.append(outputFilePath, s"${jsonString}\n")
+                // os.write.append(outputFilePath, s"${jsonString}\n")
             case _ => 
                 println("Whoops")
         })
+
+        val jsonList = upickle.default.write(InstrJsonList, indent = 1)
+        os.write.append(outputFilePath, s"${jsonList}\n")
+        // println(jsonList)
     }
 }
