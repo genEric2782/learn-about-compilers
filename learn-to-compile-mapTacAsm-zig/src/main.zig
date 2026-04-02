@@ -4,10 +4,37 @@ const learn_to_compile_mapTacAsm_zig = @import("learn_to_compile_mapTacAsm_zig")
 
 pub fn main() !void {
     // Prints to stderr, ignoring potential errors.
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
-    try learn_to_compile_mapTacAsm_zig.bufferedPrint();
+    // std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    // try learn_to_compile_mapTacAsm_zig.bufferedPrint();
 
-    try asmMap.readInTACFile();
+    // using GeneralPurposeAllocator to define a pattern for how memory is allocated
+    // the GeneralPurposeAllocator (debug) allocator
+    // "This is a safe allocator that can prevent double-free, use-after-free and can detect leaks" per documentation
+    // .{} is for configuring the allocator
+    // . -> infer struct type
+    // {} -> empty strcut (Default settings)
+    // the {} after the argument creates an instance of the allocator
+    // var -> mutable var
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // defer - run this code when the current scope exits
+    //      this ensures the allocator is properly cleaned up
+    defer {
+        // de initialzes the heap returns a leak check if a memory leak was found
+        const check = gpa.deinit();
+        if (check == .leak) {
+            std.debug.print("Mem leak found\n", .{});
+            @panic("Mem Leak");
+        }
+    }
+
+    // the .allocator is an interface for using the newly created gpa
+    const allocator = gpa.allocator();
+
+    const tacInstrcutionJson = try asmMap.readInTACFile(allocator);
+    defer asmMap.freeTACCopy(allocator, tacInstrcutionJson);
+    // defer allocator.free(tacInstrcutionJson);
+
+    try asmMap.generateASMInstr(tacInstrcutionJson);
 }
 
 test "simple test" {
