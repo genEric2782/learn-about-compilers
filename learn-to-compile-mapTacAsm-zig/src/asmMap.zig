@@ -1,5 +1,7 @@
 const std = @import("std");
 const linearscan = @import("linearscan.zig");
+const atomicStack = @import("atomicStack.zig");
+const global = @import("global.zig");
 
 pub const TACvar = struct {
     @"$type": []const u8,
@@ -125,34 +127,6 @@ pub fn freeTACCopy(allocator: std.mem.Allocator, deepCopy: []TACInstruction) voi
     allocator.free(deepCopy);
 }
 
-pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInstruction) !void {
-
-    // determine life times of IR instructions
-    var lifetimes = try linearscan.defineLiveInterals(allocator, tacinstructions);
-    defer lifetimes.deinit(allocator);
-
-    for (lifetimes.items) |lifetime| {
-        std.debug.print("Liftetimes: {any}\n", .{lifetime});
-    }
-    // std.debug.print("Liftetimes: {any}\n", .{lifetimes});
-
-    for (tacinstructions) |instruciton| {
-        std.debug.print("Op Codes: {s}\n", .{instruciton.opcode});
-        const instrOpCode = determinInstructionOpCode(instruciton.opcode);
-        switch (instrOpCode) {
-            OpCode.LOAD_CONSTANT => {
-                std.debug.print("Foo\n", .{});
-            },
-            OpCode.ADD => {
-                std.debug.print("Bar\n", .{});
-            },
-            else => {
-                std.debug.print("Bazz\n", .{});
-            },
-        }
-    }
-}
-
 // Since Zig cant switch on strings just map opcade json value to an enum which is can switch on
 pub fn determinInstructionOpCode(opcode: []const u8) OpCode {
     if (std.mem.eql(u8, opcode, "LOAD_CONSTANT")) {
@@ -163,4 +137,112 @@ pub fn determinInstructionOpCode(opcode: []const u8) OpCode {
     } else {
         return OpCode.ERROR;
     }
+}
+
+pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInstruction) !std.ArrayList([]const u8) {
+    var mappedAsmInstructions = try std.ArrayList([]const u8).initCapacity(allocator, 0);
+    // defer mappedAsmInstructions.deinit(allocator); // TODO: Free here?
+
+    var tacToRegMap = std.StringHashMap(*global.Stack.Node).init(allocator); // defer tacInitalPos.deinit();
+    defer tacToRegMap.deinit(); // TODO: Free here?
+
+    // determine life times of IR instructions
+    var lifetimes = try linearscan.defineLiveInterals(allocator, tacinstructions);
+    defer lifetimes.deinit(allocator);
+
+    var asmInstr: []const u8 = &[_]u8{}; // initalize to an empty slice doing there here to aovid lifetime issues? of initalizing in the switch
+
+    // for (lifetimes.items) |lifetime| {
+    //     std.debug.print("Liftetimes: {any}\n", .{lifetime});
+    // }
+    // std.debug.print("Liftetimes: {any}\n", .{lifetimes});
+    var lifetimeCounter: i32 = 0;
+    for (tacinstructions) |instruciton| {
+        std.debug.print("Op Codes: {s}\n", .{instruciton.opcode});
+        const instrOpCode = determinInstructionOpCode(instruciton.opcode);
+        switch (instrOpCode) {
+            OpCode.LOAD_CONSTANT => {
+                const reg: *global.Stack.Node = global.asm_stack.pop() orelse return error.EmptyStack; // TODO Need to handle spilling varibale if out of stack space
+                try tacToRegMap.put(instruciton.tacvar.tacTempValue, reg); // .* -> deref
+                asmInstr = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
+                    reg.data,
+                    instruciton.tacvar.value orelse return error.MissingValue,
+                });
+                // defer allocator.free(asmInstr);
+                // mappedAsmInstructions.append(allocator, asmInstr);
+                try mappedAsmInstructions.append(allocator, asmInstr);
+                std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
+            },
+            OpCode.ADD => {
+                const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
+                const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
+
+                // Look for what to instructions are getting added together
+                // since the instructions that are going to be added should be in the map that can just cross reference
+                // Ziggy why no support for multiple bindings on an if stament :(
+                if (operand1) |reg1| {
+                    if (operand2) |reg2| {
+                        asmInstr = try std.fmt.allocPrint(allocator, "add {s}, {s}", .{
+                            reg1.data,
+                            reg2.data,
+                        });
+                        try mappedAsmInstructions.append(allocator, asmInstr);
+                        // TODO This is a little lazy do better
+                        const asmOut = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
+                            "rdi",
+                            reg1.data,
+                        });
+                        try mappedAsmInstructions.append(allocator, asmOut);
+                    } else {
+                        return error.MissingValue;
+                    }
+                } else {
+                    return error.MissingValue;
+                }
+                // defer allocator.free(asmInstr);
+
+                std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
+            },
+            else => {
+                std.debug.print("Bazz\n", .{});
+            },
+        }
+        lifetimeCounter += 1;
+        // try mappedAsmInstructions.append(allocator, asmInstr);
+
+        // TODO perform lifetime check to free up registers here
+
+    }
+
+    return mappedAsmInstructions;
+}
+
+// allocator: std.mem.Allocator,
+pub fn generateASMFile(mapped_asm_instructions: std.ArrayList([]const u8)) !void {
+    const file_path = "../../output.asm";
+
+    const file = try std.fs.cwd().createFile(file_path, .{ .truncate = true });
+    defer file.close();
+
+    // Seems like alot of boiler plate for a writer...
+    var buffer: [1024]u8 = undefined;
+    var writer_wrapper = file.writer(&buffer);
+    const writer = &writer_wrapper.interface;
+
+    // Create the asm file
+    // Header Boiler plate
+    try writer.print("section .text\n", .{});
+    try writer.print("global _start\n", .{});
+    try writer.print("\n", .{});
+    try writer.print("_start:\n", .{});
+
+    for (mapped_asm_instructions.items) |mapped_asm_instruction| {
+        try writer.print("    {s}\n", .{mapped_asm_instruction});
+    }
+
+    // the move the exit code 60 to the rax reg?
+    try writer.print("    mov rax, 60\n", .{}); // TODO make this dynamic
+    try writer.print("    syscall", .{}); // TODO make this dynamic
+
+    try writer.flush(); // this is what actually writes all the writer lines to the file
 }
