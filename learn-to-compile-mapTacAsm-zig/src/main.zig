@@ -78,7 +78,7 @@ pub fn main() !void {
     defer asmMap.freeTACCopy(allocator, tacInstrcutionJson);
     // defer allocator.free(tacInstrcutionJson);
 
-    try asmMap.generateASMInstr(tacInstrcutionJson);
+    try asmMap.generateASMInstr(allocator, tacInstrcutionJson);
 }
 
 test "simple test" {

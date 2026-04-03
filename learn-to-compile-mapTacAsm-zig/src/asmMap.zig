@@ -125,10 +125,16 @@ pub fn freeTACCopy(allocator: std.mem.Allocator, deepCopy: []TACInstruction) voi
     allocator.free(deepCopy);
 }
 
-pub fn generateASMInstr(tacinstructions: []TACInstruction) !void {
+pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInstruction) !void {
 
     // determine life times of IR instructions
-    try linearscan.defineLiveInterals(tacinstructions);
+    var lifetimes = try linearscan.defineLiveInterals(allocator, tacinstructions);
+    defer lifetimes.deinit(allocator);
+
+    for (lifetimes.items) |lifetime| {
+        std.debug.print("Liftetimes: {any}\n", .{lifetime});
+    }
+    // std.debug.print("Liftetimes: {any}\n", .{lifetimes});
 
     for (tacinstructions) |instruciton| {
         std.debug.print("Op Codes: {s}\n", .{instruciton.opcode});
