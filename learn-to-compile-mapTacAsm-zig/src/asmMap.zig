@@ -1,15 +1,16 @@
 const std = @import("std");
+const linearscan = @import("linearscan.zig");
 
-const TACvar = struct {
+pub const TACvar = struct {
     @"$type": []const u8,
     tacTempValue: []const u8,
     value: ?[]const u8 = null,
-    op: ?[]const u8 = null, // ? used to mark as opotional
+    op: ?[]const u8 = null, // ? used to mark as optional
     arg1: ?[]const u8 = null,
     arg2: ?[]const u8 = null,
 };
 
-const TACInstruction = struct {
+pub const TACInstruction = struct {
     opcode: []const u8, // Zig doesnt have strings it instead has slices of bytes
     tacvar: TACvar,
 };
@@ -125,6 +126,10 @@ pub fn freeTACCopy(allocator: std.mem.Allocator, deepCopy: []TACInstruction) voi
 }
 
 pub fn generateASMInstr(tacinstructions: []TACInstruction) !void {
+
+    // determine life times of IR instructions
+    try linearscan.defineLiveInterals(tacinstructions);
+
     for (tacinstructions) |instruciton| {
         std.debug.print("Op Codes: {s}\n", .{instruciton.opcode});
         const instrOpCode = determinInstructionOpCode(instruciton.opcode);
