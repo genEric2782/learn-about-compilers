@@ -12,6 +12,7 @@ object Main {
 
     var tacRepresentation = new IRConverter
     val _ = tacRepresentation.generateTacInstrFromAST(ASTObject)
-    tacRepresentation.printTac(tacRepresentation.tacInstrList)
+    // tacRepresentation.printTac(tacRepresentation.tacInstrList)
+    tacRepresentation.writeToTacJson(tacRepresentation.tacInstrList)
   }
 }
