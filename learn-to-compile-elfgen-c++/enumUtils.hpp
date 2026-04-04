@@ -80,12 +80,16 @@ struct RegistersEnumUtils {
         {"rcx", Registers::rcx},
         {"rbx", Registers::rbx},
         {"rax", Registers::rax},
-        {"rax", Registers::unknown}
+        {"unknown", Registers::unknown}
     };
 
     static Registers stringToRegisters(const std::string& str) 
     {
         std::string test = str;
+        if (!test.empty() && test.back() == ',')
+        {
+            test.pop_back();
+        }
         std::transform(test.begin(), test.end(), test.begin(), ::tolower); // ensuring string is lowoer case for match
 
         auto iter = register_map.find(test);
@@ -95,6 +99,10 @@ struct RegistersEnumUtils {
     static bool isStringInRegistersEnum(const std::string& str) 
     {
         std::string test = str; // weird casting shennagins 
+        if (!test.empty() && test.back() == ',')
+        {
+            test.pop_back();
+        }
         std::transform(test.begin(), test.end(), test.begin(), ::tolower); // ensuring string is lowoer case for match
 
         auto iter = register_map.find(test);

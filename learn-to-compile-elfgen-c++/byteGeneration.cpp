@@ -16,15 +16,15 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
             // since for now we are going to assume everything is is 64-bit use REX prefixes for opcode 
             if(InstructionEnumUtils::isStringInInstructionsEnum(instruction)) 
             {
-                std::cout << "Instruction" << std::endl;
+                std::cout << "Instruction: " << instruction << std::endl;
             }
             else if (RegistersEnumUtils::isStringInRegistersEnum(instruction)) 
             {
-                std::cout << "Regoster" << std::endl;
+                std::cout << "Regoster: " << instruction << std::endl;
             } 
             else 
             {
-                std::cout << "where am i" << std::endl;
+                std::cout << "where am I: " << instruction << std::endl;
             }
         }
     }
