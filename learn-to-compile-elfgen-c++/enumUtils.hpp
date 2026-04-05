@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cstdint>
 
+// TODO I think I can make these more generic so i dont have to make so many per enum 
+
 enum class instructionType
 {
     instruction,
@@ -13,9 +15,6 @@ enum class instructionType
     unkown
 };
 
-std::ostream& operator<<(std::ostream& os, const instructionType it) {
-    return os << static_cast<int>(it);
-}
 
 enum class Instructions 
 {
@@ -24,10 +23,6 @@ enum class Instructions
     unknown
     // TODO More commands
 };
-
-std::ostream& operator<<(std::ostream& os, const Instructions i) {
-    return os << static_cast<int>(i);
-}
 
 struct InstructionEnumUtils 
 {
@@ -83,9 +78,6 @@ enum class Registers : uint8_t
     unknown = 0xFF
 };
 
-std::ostream& operator<<(std::ostream& os, const Registers r) {
-    return os << static_cast<int>(r);
-}
 struct RegistersEnumUtils {
     inline static const std::unordered_map<std::string, Registers> register_map = 
     {
@@ -134,4 +126,36 @@ struct RegistersEnumUtils {
         return (iter != register_map.end()) ? true : false;
     }
 
+};
+
+enum class Keywords : uint16_t
+{
+    syscall = 0x0F05,
+    unknown = 0xFFFF,
+};
+
+struct KeywordsEnumUtils {
+    inline static const std::unordered_map<std::string, Keywords> Keywords_map = 
+    {
+        {"syscall", Keywords::syscall},
+        {"unknown", Keywords::unknown}
+    };
+
+    static Keywords stringToKeywords(const std::string str) 
+    {
+        std::string test = str; 
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower); // ensuring string is lowoer case for match
+
+        auto iter = Keywords_map.find(test);
+        return (iter != Keywords_map.end()) ? iter->second : Keywords::unknown;
+    }
+
+    static bool isStringInKeywordsEnum(const std::string& str) 
+    {
+        std::string test = str; 
+        std::transform(test.begin(), test.end(), test.begin(), ::tolower); // ensuring string is lowoer case for match
+
+        auto iter = Keywords_map.find(test);
+        return (iter != Keywords_map.end()) ? true : false;
+    }
 };

@@ -31,6 +31,15 @@ std::string convertToHexString(uint8_t val)
     return ss.str();
 }
 
+std::string convertTo16HexString(uint16_t val)
+{
+    std::stringstream ss;
+    ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') 
+       << static_cast<int>(val);
+
+    return ss.str();
+}
+
 int ModR_M_Set(uint8_t mod, uint8_t reg, uint8_t rm)
 {
     int mod_r_m = 0x00;
@@ -158,16 +167,14 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
                                 line.push_back(rexByteString);
                                 line.push_back(add_two_reg_string);
                                 line.push_back(mod_r_m_reg_string);
+                                bytestring.push_back(line);
 
                                 std::cout << "This is the add instruction as Bytes: " << rexByteString << add_two_reg_string << mod_r_m_reg_string << std::endl;
-
-
-                                bytestring.push_back(line);
+                                
                             }
                         }
 
                         break;
-
                     default:
                         std::cout << "The heck" << std::endl;
                         break;
@@ -189,6 +196,27 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
 
                 intruction_type_map.insert({instruction_count, {instructionType::literal, static_cast<uint64_t>(instruction_val)}});
                 instruction_count++;
+            }
+            else if (KeywordsEnumUtils::isStringInKeywordsEnum(instruction))
+            {
+                std::cout << "Keyword: " << instruction << std::endl;
+                switch(KeywordsEnumUtils::stringToKeywords(instruction)) 
+                {
+                    case Keywords::syscall:
+                    {
+                        std::string keyword_string = convertTo16HexString(static_cast<uint16_t>(Keywords::syscall));
+
+                        std::vector<std::string> line;
+                        line.push_back(keyword_string);
+                        bytestring.push_back(line);
+
+                        std::cout << "Keyword Byte: " << keyword_string << std::endl;
+                        break;
+                    }
+                    default:
+                        std::cout << "heck" << std::endl;
+                        break;
+                }
             }
             else 
             {
