@@ -31,13 +31,30 @@ std::string convertToHexString(uint8_t val)
     return ss.str();
 }
 
-std::string convertTo16HexString(uint16_t val)
+std::vector<std::string> convertTo16HexTo8VecString(uint16_t val)
 {
+    std::vector<std::string> result;
     std::stringstream ss;
-    ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') 
-       << static_cast<int>(val);
 
-    return ss.str();
+    // seperate the bytes 
+    uint8_t upperByte = (val >> 8) & 0xFF;
+    uint8_t lowerByte = val & 0xFF;
+
+    // for the upper 8 bits 
+    ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') 
+       << static_cast<int>(upperByte);
+    result.push_back(ss.str());
+
+    // clear out stream 
+    ss.str("");
+    ss.clear();
+
+    // for the lower 8 bits 
+    ss << std::hex << std::uppercase << std::setw(2) << std::setfill('0') 
+       << static_cast<int>(lowerByte);
+    result.push_back(ss.str());
+
+    return result;
 }
 
 int ModR_M_Set(uint8_t mod, uint8_t reg, uint8_t rm)
@@ -52,8 +69,8 @@ int ModR_M_Set(uint8_t mod, uint8_t reg, uint8_t rm)
 
     return mod_r_m;
 }
-
-void generateInstructionBytes(std::vector<std::vector<std::string>> lines) 
+// TODO Still need to add padding to move and add? 
+std::vector<std::vector<std::string>> generateInstructionBytes(std::vector<std::vector<std::string>> lines) 
 {
     std::vector<std::vector<std::string>> parsedAsmInstructions = readInAsmFile();
     std::map<int, std::tuple<instructionType, uint8_t>> intruction_type_map;
@@ -98,18 +115,20 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
 
                                 std::string mov_op_reg_byte_string = convertToHexString(mov_op_reg_byte);
                                 std::string literal_string = convertToHexString(std::get<1>(intruction_type_map[0]));
-                                // Padding for string literal to be 8 bytes 
-                                int bytes_to_pad = 8 - (literal_string.size() / 2);
-                                for (int i = bytes_to_pad; i > 0; i--)
-                                {
-                                    literal_string = literal_string + "00";
-                                }
+
                                 
                                 // vector containing instruction line 
                                 std::vector<std::string> line;
                                 line.push_back(rexByteString);
                                 line.push_back(mov_op_reg_byte_string);
                                 line.push_back(literal_string);
+
+                                // Padding for string literal to be 8 bytes 
+                                int bytes_to_pad = 8 - (literal_string.size() / 2);
+                                for (int i = bytes_to_pad; i > 0; i--)
+                                {
+                                    line.push_back("00");
+                                }
 
                                 bytestring.push_back(line);
 
@@ -134,7 +153,7 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
                                 line.push_back(mod_r_m_reg_string);
                                 bytestring.push_back(line);
 
-                                std::cout << "This is the add instruction as Bytes: " << rexByteString << mov_op_byte_string << mod_r_m_reg_string << std::endl;
+                                std::cout << "This is the other mov instruction as Bytes: " << rexByteString << mov_op_byte_string << mod_r_m_reg_string << std::endl;
 
                             }
                         }
@@ -204,13 +223,13 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
                 {
                     case Keywords::syscall:
                     {
-                        std::string keyword_string = convertTo16HexString(static_cast<uint16_t>(Keywords::syscall));
+                        std::vector<std::string> keyword_string = convertTo16HexTo8VecString(static_cast<uint16_t>(Keywords::syscall));
 
-                        std::vector<std::string> line;
-                        line.push_back(keyword_string);
-                        bytestring.push_back(line);
+                        // std::vector<std::string> line;
+                        // line.push_back(keyword_string);
+                        bytestring.push_back(keyword_string);
 
-                        std::cout << "Keyword Byte: " << keyword_string << std::endl;
+                        std::cout << "Keyword Byte: " << static_cast<uint16_t>(Keywords::syscall) << std::endl;
                         break;
                     }
                     default:
@@ -228,4 +247,20 @@ void generateInstructionBytes(std::vector<std::vector<std::string>> lines)
             }
         }
     }
+
+    return bytestring;
+}
+
+std::vector<uint8_t> convertToByteVector(const std::vector<std::vector<std::string>>& bytestring) 
+{
+    std::vector<uint8_t> byteVector;
+
+    for (const auto& row : bytestring) {
+        for (const auto& singlehexStr : row) {
+            uint8_t byte = static_cast<uint8_t>(std::stoul(singlehexStr, nullptr, 16));
+            byteVector.push_back(byte);
+        }
+    }
+
+    return byteVector;
 }
