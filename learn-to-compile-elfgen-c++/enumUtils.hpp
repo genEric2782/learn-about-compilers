@@ -3,6 +3,19 @@
 #include <unordered_map>
 #include <string>
 #include <algorithm>
+#include <cstdint>
+
+enum class instructionType
+{
+    instruction,
+    register_name, // since register is a reserved keyword
+    literal,
+    unkown
+};
+
+std::ostream& operator<<(std::ostream& os, const instructionType it) {
+    return os << static_cast<int>(it);
+}
 
 enum class Instructions 
 {
@@ -11,6 +24,10 @@ enum class Instructions
     unknown
     // TODO More commands
 };
+
+std::ostream& operator<<(std::ostream& os, const Instructions i) {
+    return os << static_cast<int>(i);
+}
 
 struct InstructionEnumUtils 
 {
@@ -21,7 +38,7 @@ struct InstructionEnumUtils
         {"unknown", Instructions::unknown}
     };
 
-    static Instructions stringToInstructions(const std::string& str) 
+    static Instructions stringToInstructions(const std::string str) 
     {
         std::string test = str; 
         std::transform(test.begin(), test.end(), test.begin(), ::tolower); // ensuring string is lowoer case for match
@@ -40,27 +57,35 @@ struct InstructionEnumUtils
     }
 };
 
-enum class Registers 
+// std::ostream& operator<<(std::ostream& os, const InstructionEnumUtils ieu) {
+//     for (int i : ieu.instruction_map)
+//     return os << ieu;
+// }
+
+enum class Registers : uint8_t
 {
-    r15,
-    r14,
-    r13,
-    r12,
-    r11,
-    r10,
-    r9,
-    r8,
-    rsp,
-    rbp,
-    rdi,
-    rsi,
-    rdx,
-    rcx,
-    rbx,
-    rax,
-    unknown
+    r15 = 0x0F,
+    r14 = 0x0E,
+    r13 = 0x0D,
+    r12 = 0x0C,
+    r11 = 0x0B,
+    r10 = 0x0A,
+    r9 = 0x09,
+    r8 = 0x08,
+    rsp = 0x04,
+    rbp = 0x05,
+    rdi = 0x07,
+    rsi = 0x06,
+    rdx = 0x02,
+    rcx = 0x01,
+    rbx = 0x03,
+    rax = 0x00,
+    unknown = 0xFF
 };
 
+std::ostream& operator<<(std::ostream& os, const Registers r) {
+    return os << static_cast<int>(r);
+}
 struct RegistersEnumUtils {
     inline static const std::unordered_map<std::string, Registers> register_map = 
     {
@@ -83,7 +108,7 @@ struct RegistersEnumUtils {
         {"unknown", Registers::unknown}
     };
 
-    static Registers stringToRegisters(const std::string& str) 
+    static Registers stringToRegisters(const std::string str) 
     {
         std::string test = str;
         if (!test.empty() && test.back() == ',')
