@@ -15,7 +15,7 @@ object JsonASTReader {
     // Unit is similar to specifying void for a return value
     def readJsonASTFile(): tac.jsonAST = 
     {
-        val astFilePath =  os.Path("../../ASTree.json", os.pwd)
+        val astFilePath =  os.Path("../ASTree.json", os.pwd)
         val jsonString = os.read(astFilePath)
         val parsedJson = upickle.default.read[jsonAST](jsonString)
 
