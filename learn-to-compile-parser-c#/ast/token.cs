@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 public enum TokenKindEnum
 {
     Integer,
@@ -22,19 +23,26 @@ public enum Operators
 
 public class TokenKind
 {
+    [JsonInclude]
     public string Type { get; set; }
+    [JsonInclude]
     public long? value { get; set; }
 }
 
 public class TextSpan
 {
+    [JsonInclude]
     public int Start { get; set; }
+    [JsonInclude]
     public int End { get; set; }
+    [JsonInclude]
     public string Literal { get; set; } = "";
 }
 
 public class Token
 {
+    [JsonInclude]
     public TokenKind Kind { get; set; }
+    [JsonInclude]
     public TextSpan Span { get; set; } = new();
 }
