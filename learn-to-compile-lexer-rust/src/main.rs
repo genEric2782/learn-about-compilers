@@ -1,3 +1,5 @@
+use crate::r#extern::extern_hs::{hs_exit, hs_init, readAST};
+use crate::r#extern::extern_py::evaluate_ast_with_python;
 use crate::rslexer::lexer::{TokenKind}; //Token,
 use crate::r#extern::extern_cs::{call_parser};
 use crate::ast::ast::{FlatASTNode, rebuild_tree};
@@ -5,6 +7,8 @@ use crate::ast::ast::{FlatASTNode, rebuild_tree};
 // use std::process::{Command, Stdio}; used when running C# as a process 
 // use std::io::{self, Write}; // BufRead
 use std::ffi::CString;
+// use pyo3::prelude::*;
+// use pyo3::types::PyModule;
 
 mod rslexer;
 mod r#extern;
@@ -54,9 +58,36 @@ fn main() {
     
 
     let ast = rebuild_tree(&flat_ast, 0); 
-    serde_json::to_writer_pretty(std::io::stdout(), &ast).unwrap();
+    let serialized_ast = serde_json::to_string(&ast).unwrap();
+    let serialized_ast_clone = &serialized_ast.clone();
+    let c_ast_input = CString::new(serialized_ast).unwrap();
+
+
+    unsafe { hs_init(std::ptr::null_mut(), std::ptr::null_mut()); };
+    let c_is_valid_ast_typecheck_output = unsafe { readAST(c_ast_input.as_ptr()) };
+    unsafe { hs_exit(); };
+    if c_is_valid_ast_typecheck_output == 1 
+    {
+        // TODO Run this async? 
+        println!("Yay its valid");
+        match evaluate_ast_with_python(&serialized_ast_clone) {
+            Ok(result) => {
+                println!("The result of the evaluated AST {}", result)
+            }
+            Err(e) => {
+                eprintln!("Error in the Python Code: {}", e)
+            }
+        }
+    } 
+    else // == 0  
+    {
+        panic!("Invalid Tree Gasp");
+    }
+    // let c_is_valid_ast_return = unsafe { };
+
+    // serde_json::to_writer_pretty(std::io::stdout(), &ast).unwrap();
     // Debugging
-    println!();
+    // println!();
     /*  Basic Debugging 
         // serde_json::to_writer_pretty(std::io::stdout(), &parsed_ast).unwrap();
         println!("{:?}", serde_json::to_string(&tokens).unwrap());

@@ -11,6 +11,7 @@ pub struct FlatASTNode {
 //  public List<ASTNode> Children { get; set; } = new();
 
 #[derive(serde::Serialize, Deserialize, Clone)]
+#[serde(rename_all = "PascalCase")]
 pub struct ASTNode {
     node_type: String,
     value: String,

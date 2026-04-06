@@ -19,14 +19,6 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/githubuser/learn-to-compile-hs#readme>
 
-dependencies:
-- base >= 4.7 && < 5
-- aeson
-- bytestring
-- ghc-boot
-- binary
-- text
-
 ghc-options:
 - -Wall
 - -Wcompat
@@ -40,6 +32,17 @@ ghc-options:
 
 library:
   source-dirs: src
+  exposed-modules: 
+    - ReadAST 
+    - ReadASTJson
+  dependencies:
+    - base >= 4.7 && < 5
+    - aeson
+    - bytestring
+    - ghc-boot
+    - binary
+    - text
+    - xhtml
 
 executables:
   learn-to-compile-hs-exe:
@@ -50,6 +53,13 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - base >= 4.7 && < 5 
+    - aeson
+    - bytestring
+    - ghc-boot
+    - binary
+    - text
+    - xhtml
     - learn-to-compile-hs
 
 tests:

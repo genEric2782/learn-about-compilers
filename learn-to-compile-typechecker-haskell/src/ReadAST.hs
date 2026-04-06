@@ -1,11 +1,15 @@
 -- GHC language pragma, tells compiler to enable specific language extenstions
+{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
-module ReadASTJson where
+module ReadAST where
 
-import qualified Data.ByteString.Lazy as B
+import Foreign.C.Types
+import Foreign.C.String (CString, peekCString)
+import qualified Data.ByteString.Lazy.Char8 as Bc
 import GHC.Data.ShortText (ShortText(contents))
 import GHC.Generics (Generic)
 import Data.Aeson
@@ -14,6 +18,10 @@ import Data.Aeson.Types (Parser)
 import Data.Bool (Bool)
 import Data.Char (isNumber)
 import Text.Read (readMaybe)
+import qualified Data.ByteString as B
+import Text.XHtml (input)
+import Foreign.C (CString)
+import Control.Exception (try, SomeException)
 
 -- One day ill use the real types instead of onyl strings and then i wont need this :D 
 stringToIntSafe :: String -> Maybe Int
@@ -74,23 +82,21 @@ instance FromJSON ASTNode where
         return node
 
 -- func name :: arg1 :: output 
-readASTFromFile :: FilePath -> IO (Either String ASTNode)
+-- exposes this method for rust to call via ffi
+foreign export ccall readAST :: CString -> IO CInt 
+readAST :: CString -> IO CInt
 -- function logic 
-readASTFromFile path = do
-    contents <- B.readFile path
-    return (eitherDecode contents)
+readAST cstr = do 
+    result <- try $ do 
+        input <- peekCString cstr -- since CString is a pointer to a C-style string we call this method to convert it to  a String haskell can work with
+        let jsonAsByte = Bc.pack input -- this cshould conver the string to a byte string that can be parsed 
+        case decode jsonAsByte :: Maybe ASTNode of -- decode ast 
+            Just node -> do -- Valid json 
+                print node -- print the node for debuggin (dont think this will do anything )
+                -- hFlush stdout -- this might be needed to see the stdout when calling from rust 
+                return True -- valid tree = return 
+            Nothing -> return False -- Invalid json 
+    case result of
+        Left (_ :: SomeException) -> return 0 -- SomeException catch all , _ wildcard 
+        Right val ->  return (if val then 1 else 0) 
 
-
-
--- This is applicative style, using do makes it monadic 
--- -- This is giving specifics on how to parse the json 
--- instance FromJSON ASTNode where
---     parseJSON = withObject "ASTNode" $ \obj -> 
---         ASTNode
---             -- the $ and * basically take the json object ASTNode and access the values within the apply functions 
---             -- the * being for the already "unwrapped funtion from the $ call"
---             -- .: indicates a required feild 
---             <$> obj .: "NodeType"
---             <*> obj .: "Value"
---             -- .:? optional field witha default value 
---             <*> obj .:? "Children" .!= []
