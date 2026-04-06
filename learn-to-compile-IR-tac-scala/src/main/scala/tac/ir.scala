@@ -8,7 +8,7 @@ import upickle.default._
 class IRConverter 
 {
     // TODO Do proper getting and setting for this list
-    val outputFilePath = os.Path("../../TacJson.json", os.pwd)
+    val outputFilePath = os.Path("../TacJson.json", os.pwd)
     var tacInstrList = ListBuffer.empty[(TACInstr)]
     var InstrJsonList = ListBuffer.empty[(InstructionMetaData)]
     private var tmpFortmp = Stack[String]()
