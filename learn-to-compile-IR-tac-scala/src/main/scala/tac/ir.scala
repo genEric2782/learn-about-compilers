@@ -8,7 +8,7 @@ import upickle.default._
 class IRConverter 
 {
     // TODO Do proper getting and setting for this list
-    val outputFilePath = os.Path("../TacJson.json", os.pwd)
+    // val outputFilePath = os.Path("../TacJson.json", os.pwd)
     var tacInstrList = ListBuffer.empty[(TACInstr)]
     var InstrJsonList = ListBuffer.empty[(InstructionMetaData)]
     private var tmpFortmp = Stack[String]()
@@ -50,10 +50,10 @@ class IRConverter
         tacInstr.foreach(instr => instr match {
             case TACConst(tmp, v) => 
                 println(s"${tmp} = ${v}")
-                os.write.append(outputFilePath, s"${tmp} = ${v}\n")
+                // os.write.append(outputFilePath, s"${tmp} = ${v}\n")
             case TACOp(tmp, o, v1, v2) =>
                 println(s"${tmp} = ${v1} ${o} ${v2}")
-                os.write.append(outputFilePath, s"${tmp} = ${v1} ${o} ${v2}\n")
+                // os.write.append(outputFilePath, s"${tmp} = ${v1} ${o} ${v2}\n")
             case _ => 
                 println("Whoops")
         })
@@ -80,7 +80,7 @@ class IRConverter
         })
 
         val jsonList = upickle.default.write(InstrJsonList, indent = 1)
-        os.write.append(outputFilePath, s"${jsonList}\n")
+        // os.write.append(outputFilePath, s"${jsonList}\n")
         // println(jsonList)
     }
 }

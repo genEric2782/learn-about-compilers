@@ -1,5 +1,7 @@
 use crate::r#extern::extern_hs::{hs_exit, hs_init, readAST};
 use crate::r#extern::extern_py::evaluate_ast_with_python;
+use crate::r#extern::extern_sc::ScalaAstProcessor;
+use crate::ir::ir_tac::TACInstruction;
 use crate::rslexer::lexer::{TokenKind}; //Token,
 use crate::r#extern::extern_cs::{call_parser};
 use crate::ast::ast::{FlatASTNode, rebuild_tree};
@@ -13,6 +15,7 @@ use std::ffi::CString;
 mod rslexer;
 mod r#extern;
 mod ast;
+mod ir;
 
 // #[derive(Serialize)]
 // struct lexedOutput {
@@ -82,6 +85,20 @@ fn main() {
     else // == 0  
     {
         panic!("Invalid Tree Gasp");
+    }
+
+    let tac_generation = ScalaAstProcessor::new().expect("Failed to initialise GrallVM isolate ");
+    match tac_generation.process(&serialized_ast_clone) {
+        Ok(result) => {
+            // println!("Raw JSON from Scala:\n{result}");  // add this
+            let tac_instructions: Vec<TACInstruction> = serde_json::from_str(&result)
+                .expect("Faild To deserialize");
+            // Sanity check
+            for instr in &tac_instructions {
+                println!("{:?}", instr);
+            }
+        }
+        Err(e) => eprint!("Error: {e}"),
     }
     // let c_is_valid_ast_return = unsafe { };
 
