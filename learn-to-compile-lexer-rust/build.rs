@@ -1,3 +1,5 @@
+use std::{path::PathBuf, process::Command};
+
 fn main() {
     println!("cargo:rustc-link-search=native=./dlibs");
 
@@ -18,10 +20,21 @@ fn main() {
     let scala_lib = "/home/generic/compiler_project/take2/learn-about-compilers/learn-to-compile-IR-tac-scala/target/native-image/";
     println!("cargo:rustc-link-search=native={scala_lib}");
     println!("cargo:rustc-link-lib=dylib=learn-about-compilers-scala");
-    // Tell Cargo where the compiled Scala native library lives
-    // println!("cargo:rustc-link-search=native=../scala-ast/target/native-image"); // TODO
-    // println!("cargo:rustc-link-lib=dylib=ast-processor");
-    // // GraalVM isolate runtime
-    // println!("cargo:rustc-link-lib=dylib=graal_isolate"); // TODO
+
+    // Zig 
+    let zig_dir = PathBuf::from("../learn-to-compile-mapTacAsm-zig");
+
+    let status = Command::new("zig")
+        .args(["build", "-Doptimize=ReleaseSafe"])
+        .current_dir(&zig_dir)
+        .status()
+        .expect("zig build failed — is Zig installed?");
+    assert!(status.success());
+
+    let lib_path = zig_dir.join("zig-out/lib");
+    println!("cargo:rustc-link-search=native={}", lib_path.display());
+    println!("cargo:rustc-link-lib=dylib=tac_codegen");
+    println!("cargo:rerun-if-changed=../learn-to-compile-mapTacAsm-zig/src/ffi.zig");
+    println!("cargo:rerun-if-changed=../learn-to-compile-mapTacAsm-zig/src/asmMap.zig");
  
 }

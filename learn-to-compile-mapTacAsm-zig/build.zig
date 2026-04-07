@@ -153,4 +153,29 @@ pub fn build(b: *std.Build) void {
     //
     // Lastly, the Zig build system is relatively simple and self-contained,
     // and reading its source code will allow you to master it.
+
+    // const lib = b.addSharedLibrary(.{
+    //     .name = "tac_codegen",
+    //     .root_source_file = b.path("src/ffi.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .link_libc = true, // required for c_allocator
+    // });
+
+    // b.installArtifact(lib);
+
+    const shared_mod = b.createModule(.{
+        .root_source_file = b.path("src/ffi.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+
+    const lib = b.addLibrary(.{
+        .name = "tac_codegen",
+        .root_module = shared_mod,
+        .linkage = .dynamic, // replaces shared library
+    });
+
+    b.installArtifact(lib);
 }

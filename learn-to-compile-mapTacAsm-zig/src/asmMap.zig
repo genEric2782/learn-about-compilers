@@ -176,7 +176,6 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
             OpCode.ADD => {
                 const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
                 const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
-
                 // Look for what to instructions are getting added together
                 // since the instructions that are going to be added should be in the map that can just cross reference
                 // Ziggy why no support for multiple bindings on an if stament :(

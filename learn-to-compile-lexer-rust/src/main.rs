@@ -1,6 +1,7 @@
 use crate::r#extern::extern_hs::{hs_exit, hs_init, readAST};
 use crate::r#extern::extern_py::evaluate_ast_with_python;
 use crate::r#extern::extern_sc::ScalaAstProcessor;
+use crate::r#extern::extern_zig::compile;
 use crate::ir::ir_tac::TACInstruction;
 use crate::rslexer::lexer::{TokenKind}; //Token,
 use crate::r#extern::extern_cs::{call_parser};
@@ -93,13 +94,21 @@ fn main() {
             // println!("Raw JSON from Scala:\n{result}");  // add this
             let tac_instructions: Vec<TACInstruction> = serde_json::from_str(&result)
                 .expect("Faild To deserialize");
+
             // Sanity check
-            for instr in &tac_instructions {
-                println!("{:?}", instr);
+            // for instr in &tac_instructions {
+            //     println!("{:?}", instr);
+            // }
+
+            match compile(&result) {
+                Ok(asm) => println!("Generated assembly:\n{asm}"),
+                Err(e)  => eprintln!("Compilation failed: {e}"),
             }
+
         }
         Err(e) => eprint!("Error: {e}"),
     }
+
     // let c_is_valid_ast_return = unsafe { };
 
     // serde_json::to_writer_pretty(std::io::stdout(), &ast).unwrap();
