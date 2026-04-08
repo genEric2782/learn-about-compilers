@@ -70,9 +70,10 @@ int ModR_M_Set(uint8_t mod, uint8_t reg, uint8_t rm)
     return mod_r_m;
 }
 // TODO Still need to add padding to move and add? 
-std::vector<std::vector<std::string>> generateInstructionBytes(std::vector<std::vector<std::string>> lines) 
+std::vector<std::vector<std::string>> generateInstructionBytes(std::vector<std::vector<std::string>> parsedAsmInstructions) 
 {
-    std::vector<std::vector<std::string>> parsedAsmInstructions = readInAsmFile();
+    // Keep for debugging 
+    // std::vector<std::vector<std::string>> parsedAsmInstructions = readInAsmFile();
     std::map<int, std::tuple<instructionType, uint8_t>> intruction_type_map;
     std::vector<std::vector<std::string>> bytestring;
     int instruction_val, instruction_count;

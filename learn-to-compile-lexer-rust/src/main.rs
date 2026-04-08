@@ -1,3 +1,5 @@
+use crate::r#extern::extern_cpp::compile_from_asm;
+use crate::r#extern::extern_go::ReadTacFromFfi;
 use crate::r#extern::extern_hs::{hs_exit, hs_init, readAST};
 use crate::r#extern::extern_py::evaluate_ast_with_python;
 use crate::r#extern::extern_sc::ScalaAstProcessor;
@@ -27,6 +29,7 @@ fn main() {
     let input = "7 + 5"; // Test string 
     // let mut stdout = io::stdout();
 
+    // Lexing Tokenization
     let mut lexer = rslexer::lexer::Lexer::new(input);
     let mut tokens = Vec::new();
     let mut idx = 0;
@@ -56,6 +59,7 @@ fn main() {
     
     let lexed_json = serde_json::to_string(&tokens).expect("Serialization failed");
 
+    // Parsing - AST Generation 
     let c_string = CString::new(lexed_json).expect("CString::new failed");
     let parsed_ast = call_parser(&c_string);
     let flat_ast: Vec<FlatASTNode> = serde_json::from_str(&parsed_ast).expect("Failed to deserialize JSON into flattened tree");
@@ -66,10 +70,12 @@ fn main() {
     let serialized_ast_clone = &serialized_ast.clone();
     let c_ast_input = CString::new(serialized_ast).unwrap();
 
-
+    // Type Checking
     unsafe { hs_init(std::ptr::null_mut(), std::ptr::null_mut()); };
     let c_is_valid_ast_typecheck_output = unsafe { readAST(c_ast_input.as_ptr()) };
     unsafe { hs_exit(); };
+
+    // Evaluation
     if c_is_valid_ast_typecheck_output == 1 
     {
         // TODO Run this async? 
@@ -82,32 +88,52 @@ fn main() {
                 eprintln!("Error in the Python Code: {}", e)
             }
         }
+
+        let tac_generation = ScalaAstProcessor::new().expect("Failed to initialise GrallVM isolate ");
+        match tac_generation.process(&serialized_ast_clone) {
+            Ok(result) => {
+                // println!("Raw JSON from Scala:\n{result}");  // add this
+                let tac_instructions: Vec<TACInstruction> = serde_json::from_str(&result)
+                    .expect("Faild To deserialize");
+
+                // Sanity check
+                // for instr in &tac_instructions {
+                //     println!("{:?}", instr);
+                // }
+
+                let c_tac = CString::new(&result[..]).unwrap(); // need to convert String to &str
+                unsafe { ReadTacFromFfi(c_tac.as_ptr()); }
+
+                match compile(&result) {
+                    Ok(asm) => {
+                        // For Debugging 
+                        println!("Generated assembly:\n{asm}");
+                        // optional compile and run assembly 
+
+                        match compile_from_asm(&asm, "output_a") {
+                            Ok(()) => println!("Elf Written to output"),
+                            Err(e) => eprintln!("Error: {e}"),
+                        }
+                        
+                    }
+                    Err(e)  => eprintln!("Compilation failed: {e}"),
+                }
+
+                // Do i want to execute a command to compile and lik with nsam here just because 
+                // nasm -f elf64 add_exit.asm -o add_exit.o
+                // ld add_exit.o -o add_exit
+                // ./add_exit
+                // echo $?
+
+            }
+            Err(e) => eprint!("Error: {e}"),
+        }
     } 
     else // == 0  
     {
         panic!("Invalid Tree Gasp");
     }
 
-    let tac_generation = ScalaAstProcessor::new().expect("Failed to initialise GrallVM isolate ");
-    match tac_generation.process(&serialized_ast_clone) {
-        Ok(result) => {
-            // println!("Raw JSON from Scala:\n{result}");  // add this
-            let tac_instructions: Vec<TACInstruction> = serde_json::from_str(&result)
-                .expect("Faild To deserialize");
-
-            // Sanity check
-            // for instr in &tac_instructions {
-            //     println!("{:?}", instr);
-            // }
-
-            match compile(&result) {
-                Ok(asm) => println!("Generated assembly:\n{asm}"),
-                Err(e)  => eprintln!("Compilation failed: {e}"),
-            }
-
-        }
-        Err(e) => eprint!("Error: {e}"),
-    }
 
     // let c_is_valid_ast_return = unsafe { };
 

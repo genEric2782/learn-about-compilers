@@ -36,5 +36,54 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=tac_codegen");
     println!("cargo:rerun-if-changed=../learn-to-compile-mapTacAsm-zig/src/ffi.zig");
     println!("cargo:rerun-if-changed=../learn-to-compile-mapTacAsm-zig/src/asmMap.zig");
- 
+
+    // C++ 
+    let out_dir = PathBuf::from("../learn-to-compile-elfgen-c++")
+        .canonicalize()
+        .expect("Could not resolve c++ project path");
+
+    let sources = [
+        "parseAsm",
+        "byteGeneration", // whatever the file with generateInstructionBytes is called
+        "elf",
+    ];
+
+    let mut obj_files: Vec<PathBuf> = Vec::new();    // Compile each .cpp to a .o
+    for src in &sources {
+        let cpp_file = out_dir.join(format!("{src}.cpp"));
+        let obj_file = out_dir.join(format!("{src}.o"));
+
+        let status = Command::new("g++")
+            .args(["-O2", "-c"])
+            .arg(&cpp_file)
+            .arg("-o")
+            .arg(&obj_file)
+            .status()
+            .expect("Failed to invoke g++");
+
+        assert!(status.success(), "C++ compilation failed for {src}.cpp");
+
+        obj_files.push(obj_file);
+
+        println!("cargo:rerun-if-changed={}", cpp_file.display());
+    }
+
+    // Bundle all .o files into one .a
+    let lib_out = out_dir.join("libparseAsm.a");
+    let status = Command::new("ar")
+        .arg("rcs")
+        .arg(&lib_out)
+        .args(&obj_files)
+        .status()
+        .expect("Failed to create static lib");
+
+    assert!(status.success(), "ar failed");
+
+    println!("cargo:rustc-link-search=native={}", out_dir.display());
+    println!("cargo:rustc-link-lib=static=parseAsm");
+    println!("cargo:rustc-link-lib=dylib=stdc++");
+
+    // GO
+    println!("cargo:rustc-link-search=native=../learn-to-compile-bytecode-go");
+    println!("cargo:rustc-link-lib=dylib=tacbytecode");
 }
