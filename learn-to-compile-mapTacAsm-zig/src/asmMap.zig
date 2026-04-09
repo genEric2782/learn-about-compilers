@@ -23,7 +23,6 @@ const OpCode = enum {
     ERROR,
 };
 
-// TODO: Get to read a JSON File now :D
 // Here void - the function returns no value
 //      ! - return error or return type
 // so !void means to return either an error or nothing
@@ -64,7 +63,7 @@ pub fn readInTACFile(allocator: std.mem.Allocator) ![]TACInstruction { // !std.A
     return copy;
 }
 
-// TODO: Deep Copy Uggghhhhhh
+// Deep Copy :(
 pub fn deepCopyJsonObject(allocator: std.mem.Allocator, tacinstructions: []TACInstruction) ![]TACInstruction {
     var copy = try allocator.alloc(TACInstruction, tacinstructions.len);
 
@@ -157,7 +156,7 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
     // }
     // std.debug.print("Liftetimes: {any}\n", .{lifetimes});
     var lifetimeCounter: i32 = 0;
-    for (tacinstructions) |instruciton| {
+    for (tacinstructions, 0..) |instruciton, i| {
         std.debug.print("Op Codes: {s}\n", .{instruciton.opcode});
         const instrOpCode = determinInstructionOpCode(instruciton.opcode);
         switch (instrOpCode) {
@@ -186,12 +185,6 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                             reg2.data,
                         });
                         try mappedAsmInstructions.append(allocator, asmInstr);
-                        // TODO This is a little lazy do better
-                        const asmOut = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
-                            "rdi",
-                            reg1.data,
-                        });
-                        try mappedAsmInstructions.append(allocator, asmOut);
                     } else {
                         return error.MissingValue;
                     }
@@ -211,11 +204,23 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
 
         // TODO perform lifetime check to free up registers here
 
+        // If this the last iteration of the loop
+        if (i == tacinstructions.len - 1) {
+            // Add instructions for program exit
+            // TODO this will only work for instructions like add
+            const reg_with_output = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse return error.MissingValue;
+            const asmOut = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
+                "rdi",
+                reg_with_output.data,
+            });
+            try mappedAsmInstructions.append(allocator, asmOut);
+        }
     }
 
     return mappedAsmInstructions;
 }
 
+// DEBUGGING
 // allocator: std.mem.Allocator,
 pub fn generateASMFile(mapped_asm_instructions: std.ArrayList([]const u8)) !void {
     const file_path = "../../output.asm";
@@ -240,8 +245,8 @@ pub fn generateASMFile(mapped_asm_instructions: std.ArrayList([]const u8)) !void
     }
 
     // the move the exit code 60 to the rax reg?
-    try writer.print("    mov rax, 60\n", .{}); // TODO make this dynamic
-    try writer.print("    syscall", .{}); // TODO make this dynamic
+    try writer.print("    mov rax, 60\n", .{});
+    try writer.print("    syscall", .{});
 
     try writer.flush(); // this is what actually writes all the writer lines to the file
 }

@@ -1,8 +1,8 @@
-use std::string;
+// use std::string;
 use std::ffi::{CStr, CString};
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
-use serde::Serialize;
+// use serde::Serialize;
 
 pub fn evaluate_ast_with_python(node: &str) -> PyResult<i64> {
 
@@ -19,7 +19,6 @@ pub fn evaluate_ast_with_python(node: &str) -> PyResult<i64> {
             .call1((node,))?
             .extract()?;
 
-        println!("Result from Python: {}", result);
         Ok(result)
     })
 }

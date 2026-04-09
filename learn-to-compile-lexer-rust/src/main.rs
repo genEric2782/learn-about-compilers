@@ -29,7 +29,7 @@ fn main() {
     let input = "7 + 5"; // Test string 
     // let mut stdout = io::stdout();
 
-    // Lexing Tokenization
+    // Lexing Tokens
     let mut lexer = rslexer::lexer::Lexer::new(input);
     let mut tokens = Vec::new();
     let mut idx = 0;
@@ -42,7 +42,8 @@ fn main() {
         idx += 1;
     }
  
- /*  Simple way to call C# code from Rust 
+ /*  
+    Simple way to call C# code from Rust via IPC
     let mut child = Command::new("dotnet")
         .arg("run")
         .current_dir("/home/generic/compiler_project/learn-about-compilers/learn-to-compile-parser-c#")
@@ -63,9 +64,8 @@ fn main() {
     let c_string = CString::new(lexed_json).expect("CString::new failed");
     let parsed_ast = call_parser(&c_string);
     let flat_ast: Vec<FlatASTNode> = serde_json::from_str(&parsed_ast).expect("Failed to deserialize JSON into flattened tree");
-    
-
     let ast = rebuild_tree(&flat_ast, 0); 
+
     let serialized_ast = serde_json::to_string(&ast).unwrap();
     let serialized_ast_clone = &serialized_ast.clone();
     let c_ast_input = CString::new(serialized_ast).unwrap();
@@ -78,8 +78,6 @@ fn main() {
     // Evaluation
     if c_is_valid_ast_typecheck_output == 1 
     {
-        // TODO Run this async? 
-        println!("Yay its valid");
         match evaluate_ast_with_python(&serialized_ast_clone) {
             Ok(result) => {
                 println!("The result of the evaluated AST {}", result)
@@ -89,27 +87,37 @@ fn main() {
             }
         }
 
+        // Conversion to IR (TAC)
         let tac_generation = ScalaAstProcessor::new().expect("Failed to initialise GrallVM isolate ");
         match tac_generation.process(&serialized_ast_clone) {
             Ok(result) => {
-                // println!("Raw JSON from Scala:\n{result}");  // add this
+                // println!("Raw JSON from Scala:\n{result}");  // DEBUG
                 let tac_instructions: Vec<TACInstruction> = serde_json::from_str(&result)
                     .expect("Faild To deserialize");
 
-                // Sanity check
-                // for instr in &tac_instructions {
-                //     println!("{:?}", instr);
-                // }
+                // DEBUG
+                println!("-----------TAC-INSTRUCTIONS------------------");
+                for instr in &tac_instructions {
+                    println!("{:?}", instr);
+                }
+                println!("-----------END-OF-TAC-INSTRUCTIONS----------");
 
                 let c_tac = CString::new(&result[..]).unwrap(); // need to convert String to &str
+                // Bytecode Generation
+                println!("-----------BYTECODE-----------------------");
                 unsafe { ReadTacFromFfi(c_tac.as_ptr()); }
+                println!("-----------END-OF-BYTECODE----------------");
 
+                // Assembly Generation
                 match compile(&result) {
                     Ok(asm) => {
                         // For Debugging 
+                        println!("-----------START-OF-ASSEMBLY----------------");
                         println!("Generated assembly:\n{asm}");
+                        println!("-----------END-OF-ASSEMBLY------------------");
                         // optional compile and run assembly 
 
+                        // Coverstion to Elf 
                         match compile_from_asm(&asm, "output_a") {
                             Ok(()) => println!("Elf Written to output"),
                             Err(e) => eprintln!("Error: {e}"),

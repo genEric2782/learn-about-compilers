@@ -61,7 +61,6 @@ class IRConverter
 
     def writeToTacJson(tacInstr: ListBuffer[TACInstr]): Unit = 
     {
-        // TODO Make Formatted json 
         tacInstr.foreach(instr => instr match {
             case TACConst(tmp, v) => 
                 val obj = InstructionMetaData(OPCodes.LOAD_CONSTANT, instr)

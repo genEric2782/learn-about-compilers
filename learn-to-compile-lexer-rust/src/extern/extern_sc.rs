@@ -46,10 +46,10 @@ unsafe extern "C" {
         json_ptr: *const c_char,
     ) -> *mut c_char;
 
-    pub unsafe fn free_string(
-        thread: GraalIsolateThreadPtr,
-        ptr:    *mut c_char,
-    );
+    // pub unsafe fn free_string(
+    //     thread: GraalIsolateThreadPtr,
+    //     ptr:    *mut c_char,
+    // );
 }
 
 // ----- Safe wrapper -----

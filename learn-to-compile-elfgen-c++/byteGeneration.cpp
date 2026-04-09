@@ -207,7 +207,6 @@ std::vector<std::vector<std::string>> generateInstructionBytes(std::vector<std::
 
                 intruction_type_map.insert({instruction_count, {instructionType::register_name, static_cast<uint8_t>(asm_reg)}});
                 instruction_count++;
-                // TODO method to create the 64bit little endian string
             } 
             else if (isNumber(instruction, instruction_val)) 
             {
