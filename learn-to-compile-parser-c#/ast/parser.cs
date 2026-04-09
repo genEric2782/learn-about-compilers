@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 public class Parser
 {
     // Should make properties? 
@@ -172,4 +174,32 @@ public class Parser
             Children = new List<ASTNode> { LNode, RNode }
         };
     }
+
+    public static List<FlatASTNode> FlattenAST(ASTNode head)
+    {
+        var flatAST = new List<FlatASTNode>();
+
+        void Visit(ASTNode node)
+        {
+            int index = flatAST.Count;
+            flatAST.Add(new FlatASTNode
+            {
+                NodeType = node.NodeType,
+                Value = node.Value,
+                ChildrenIndices = new List<int>()
+            });
+
+            foreach (var child in node.Children)
+            {
+                Visit(child);
+                flatAST[index].ChildrenIndices.Add(flatAST.Count - 1); // index of last added child
+            }
+        }
+
+        Visit(head);
+        return flatAST;
+    }
+
 }
+
+

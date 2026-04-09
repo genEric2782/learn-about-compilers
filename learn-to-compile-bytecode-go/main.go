@@ -14,7 +14,6 @@ func main() {
 
 	byte_codes := tacToByteCode(tac)
 
-	// TODO For now we are going to add a PRINT and a HALT to this byte_code
 	// will need to add these to tac in future but as these are not part of the asm code itll get a little tricky....
 	byte_codes = append(byte_codes, byte(PRINT))
 	byte_codes = append(byte_codes, byte(HALT))

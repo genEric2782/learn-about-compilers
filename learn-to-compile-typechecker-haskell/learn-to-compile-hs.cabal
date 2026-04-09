@@ -25,9 +25,11 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      ReadAST
       ReadASTJson
   other-modules:
+      HaskellStub
+      Lib
       Paths_learn_to_compile_hs
   autogen-modules:
       Paths_learn_to_compile_hs
@@ -41,6 +43,7 @@ library
     , bytestring
     , ghc-boot
     , text
+    , xhtml
   default-language: Haskell2010
 
 executable learn-to-compile-hs-exe
@@ -60,6 +63,7 @@ executable learn-to-compile-hs-exe
     , ghc-boot
     , learn-to-compile-hs
     , text
+    , xhtml
   default-language: Haskell2010
 
 test-suite learn-to-compile-hs-test
@@ -73,11 +77,5 @@ test-suite learn-to-compile-hs-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson
-    , base >=4.7 && <5
-    , binary
-    , bytestring
-    , ghc-boot
-    , learn-to-compile-hs
-    , text
+      learn-to-compile-hs
   default-language: Haskell2010

@@ -48,13 +48,13 @@ func tacToByteCode(tac_instructions []Tac) []byte {
 				byteCodes = append(byteCodes, byte(opcode))
 				b, err := convertStringToByte(instruction.Tacvar.Value)
 				if err == nil {
-					fmt.Println("Adding: ", opcode)
+					// fmt.Println("Adding: ", opcode) DEBUG
 					byteCodes = append(byteCodes, b)
 				} else {
 					panic("Something went wrong during the LOAD_CONSTANT Conversion")
 				}
 			case ADD, PRINT, HALT: // might want seperate cases someday for now...
-				fmt.Println("Adding: ", opcode)
+				// fmt.Println("Adding: ", opcode) DEBUG
 				byteCodes = append(byteCodes, byte(opcode))
 
 			default:

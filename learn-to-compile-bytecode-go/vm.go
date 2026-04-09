@@ -56,7 +56,7 @@ func (vm *VM) Run() {
 			if !ok {
 				panic("Something went wrong during pop operation")
 			}
-			fmt.Println("The Value after the add: ", val)
+			fmt.Println("The Value of the operation: ", val)
 		case HALT:
 			return
 

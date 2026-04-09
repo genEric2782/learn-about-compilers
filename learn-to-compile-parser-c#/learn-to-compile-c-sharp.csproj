@@ -1,11 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>liblearn-to-compile-c-sharp</AssemblyName>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework> <!-- net10.0 -->
+    <PublishAot>true</PublishAot> <!-- Do this so i can make a nativeAot -->
+    <NativeLib>Shared</NativeLib> <!-- To generate a shared obj for the rust code to call -->
     <RootNamespace>learn_to_compile_c_sharp</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>
+<!-- Command to run the make .so: dotnet publish -c Release -r linux-x64 -->

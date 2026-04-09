@@ -1,17 +1,17 @@
 import sys
 import json 
 
-# Will evetually read from stdout 
-def readAST():
-    try:
-        # When running by hand ../../ASTree.json
-        # When debugging ASTree.json
-        with open('../../ASTree.json', 'r') as tree:
-            return json.load(tree)
-    except FileNotFoundError:   
-        print("Could not find the file specified")
-    except json.JSONDecodeError:
-        print("Failed to evalulate json") 
+# Leave for future debugging 
+# def readAST():
+#     try:
+#         # When running by hand ../../ASTree.json
+#         # When debugging ASTree.json
+#         with open('../../ASTree.json', 'r') as tree:
+#             return json.load(tree)
+#     except FileNotFoundError:   
+#         print("Could not find the file specified")
+#     except json.JSONDecodeError:
+#         print("Failed to evalulate json") 
 
 def walkAST(tree, walkList):
 
@@ -71,24 +71,32 @@ def evaluateAST(preFixList):
             raise Exception("Started with a number currently not supported :D")
     return result 
     
-    
 
-def main(args):
-
-    jsonASTree = readAST()
-    print(jsonASTree)
-
+def evaluate_ast_from_json(json_str: str) -> int:
+    ast_tree = json.loads(json_str) 
     preFixList = []
-    walkAST(jsonASTree, preFixList)
+    walkAST(ast_tree, preFixList)
     result = evaluateAST(preFixList)
-    print(result)
+    return result
+
+# For debugging 
+# def main(args):
+
+#     # Leave in for debugging 
+#     # jsonASTree = readAST()
+#     # print(jsonASTree)
+
+#     preFixList = []
+#     walkAST(jsonASTree, preFixList)
+#     result = evaluateAST(preFixList)
+#     print(result)
     
 
-    # Testing stuff 
-    # print(f"NodeType: {jsonASTree['NodeType']}")
-    return 0
+#     # Testing stuff 
+#     # print(f"NodeType: {jsonASTree['NodeType']}")
+#     return 0
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    exit_code = main(sys.argv[1:])
-    sys.exit(exit_code)
+#     exit_code = main(sys.argv[1:])
+#     sys.exit(exit_code)
