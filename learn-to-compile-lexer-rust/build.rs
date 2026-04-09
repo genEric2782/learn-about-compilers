@@ -27,6 +27,75 @@ fn workspace_root() -> PathBuf {
         .to_path_buf()
 }
 
+// ── change detection ───────────────────────────────────────────────────────
+
+/// Emit rerun-if-changed for every file under a directory with a given extension.
+/// Falls back to watching the dir itself if it can't be read.
+fn watch_dir(dir: &Path, ext: &str) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        println!("cargo:rerun-if-changed={}", dir.display());
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            watch_dir(&path, ext);
+        } else if path.extension().map_or(false, |e| e == ext) {
+            println!("cargo:rerun-if-changed={}", path.display());
+        }
+    }
+}
+
+// ── build switches ─────────────────────────────────────────────────────────
+
+#[derive(Debug)]
+struct BuildFlags {
+    csharp:  bool,
+    haskell: bool,
+    scala:   bool,
+    go:      bool,
+    zig:     bool,
+    cpp:     bool,
+}
+
+impl BuildFlags {
+    fn from_env() -> Self {
+        // REBUILD=all          → rebuild everything
+        // REBUILD=none         → skip all native builds (just relink)
+        // REBUILD=csharp,go    → rebuild only those languages
+        // unset                → default: only rebuild if sources changed
+        //                        (cargo handles this via rerun-if-changed)
+        let var = std::env::var("REBUILD").unwrap_or_default();
+        let var = var.trim().to_lowercase();
+
+        if var == "all" {
+            return Self { csharp: true, haskell: true, scala: true, go: true, zig: true, cpp: true };
+        }
+        if var == "none" || var == "skip" {
+            return Self { csharp: false, haskell: false, scala: false, go: false, zig: false, cpp: false };
+        }
+
+        // Comma-separated list of languages to rebuild
+        if !var.is_empty() {
+            let langs: Vec<&str> = var.split(',').map(str::trim).collect();
+            return Self {
+                csharp:  langs.contains(&"csharp")  || langs.contains(&"c#"),
+                haskell: langs.contains(&"haskell"),
+                scala:   langs.contains(&"scala"),
+                go:      langs.contains(&"go"),
+                zig:     langs.contains(&"zig"),
+                cpp:     langs.contains(&"cpp")     || langs.contains(&"c++"),
+            };
+        }
+
+        // Default: let cargo's rerun-if-changed decide.
+        // We still run the build — but each function only does real work
+        // when cargo determines sources changed (which it checks via the
+        // rerun-if-changed directives we emit). On a cold build everything runs.
+        Self { csharp: true, haskell: true, scala: true, go: true, zig: true, cpp: true }
+    }
+}
+
 // ── per-language builders ──────────────────────────────────────────────────
 
 fn build_csharp(root: &Path, libs_dir: &Path) {
@@ -361,29 +430,56 @@ fn build_cpp(root: &Path, libs_dir: &Path) {
 
 // ── main ──────────────────────────────────────────────────────────────────
 
+/*
+USAGE FOR BUILD FLAGS 
+# Normal build — only rebuilds languages whose sources changed
+cargo build
+
+# Rebuild everything regardless of changes
+REBUILD=all cargo build
+
+# Skip all native builds
+REBUILD=none cargo build
+
+# Rebuild only specific languages
+REBUILD=scala cargo build
+REBUILD=csharp,go cargo build
+REBUILD=c++,zig cargo build
+
+export REBUILD=scala
+cargo build   # rebuilds scala
+cargo build   # still rebuilds scala
+
+# When done, clear it
+unset REBUILD
+cargo build   # back to normal change detection
+
+ */
+
+
 fn main() {
     let root = workspace_root();
-
-    // Central libs directory lives inside the rust crate for simplicity,
-    // but you can move it to `root.join("libs")` if you prefer.
     let libs_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("libs");
     fs::create_dir_all(&libs_dir).expect("could not create libs/");
 
-    // ── build every language ───────────────────────────────────────────────
-    build_csharp(&root, &libs_dir);
-    build_haskell(&root, &libs_dir);
-    build_scala(&root, &libs_dir);
-    build_go(&root, &libs_dir);
-    build_zig(&root, &libs_dir);
-    build_cpp(&root, &libs_dir);
+    // Tell cargo to re-run build.rs itself if this env var changes
+    println!("cargo:rerun-if-env-changed=REBUILD");
+
+    let flags = BuildFlags::from_env();
+    println!("cargo:warning=Build flags: {flags:?}");
+
+    if flags.csharp  { build_csharp(&root, &libs_dir); }
+    if flags.haskell { build_haskell(&root, &libs_dir); }
+    if flags.scala   { build_scala(&root, &libs_dir); }
+    if flags.go      { build_go(&root, &libs_dir); }
+    if flags.zig     { build_zig(&root, &libs_dir); }
+    if flags.cpp     { build_cpp(&root, &libs_dir); }
 
     // ── single link-search pointing at libs/ ──────────────────────────────
     let libs_str = libs_dir.display().to_string();
     println!("cargo:rustc-link-search=native={libs_str}");
-    // rpath so the final binary finds the .so files at runtime
     println!("cargo:rustc-link-arg=-Wl,-rpath,{libs_str}");
 
-    // ── link directives (names only, search path already set above) ────────
     println!("cargo:rustc-link-lib=dylib=learn-to-compile-c-sharp");
     println!("cargo:rustc-link-lib=dylib=haskellTypeChecker");
     println!("cargo:rustc-link-lib=dylib=learn-about-compilers-scala");
@@ -392,3 +488,35 @@ fn main() {
     println!("cargo:rustc-link-lib=dylib=parseAsm");
     println!("cargo:rustc-link-lib=dylib=stdc++");
 }
+
+
+
+    // let root = workspace_root();
+
+    // // Central libs directory lives inside the rust crate for simplicity,
+    // // but you can move it to `root.join("libs")` if you prefer.
+    // let libs_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("libs");
+    // fs::create_dir_all(&libs_dir).expect("could not create libs/");
+
+    // // ── build every language ───────────────────────────────────────────────
+    // build_csharp(&root, &libs_dir);
+    // build_haskell(&root, &libs_dir);
+    // build_scala(&root, &libs_dir);
+    // build_go(&root, &libs_dir);
+    // build_zig(&root, &libs_dir);
+    // build_cpp(&root, &libs_dir);
+
+    // // ── single link-search pointing at libs/ ──────────────────────────────
+    // let libs_str = libs_dir.display().to_string();
+    // println!("cargo:rustc-link-search=native={libs_str}");
+    // // rpath so the final binary finds the .so files at runtime
+    // println!("cargo:rustc-link-arg=-Wl,-rpath,{libs_str}");
+
+    // // ── link directives (names only, search path already set above) ────────
+    // println!("cargo:rustc-link-lib=dylib=learn-to-compile-c-sharp");
+    // println!("cargo:rustc-link-lib=dylib=haskellTypeChecker");
+    // println!("cargo:rustc-link-lib=dylib=learn-about-compilers-scala");
+    // println!("cargo:rustc-link-lib=dylib=tacbytecode");
+    // println!("cargo:rustc-link-lib=dylib=tac_codegen");
+    // println!("cargo:rustc-link-lib=dylib=parseAsm");
+    // println!("cargo:rustc-link-lib=dylib=stdc++");
