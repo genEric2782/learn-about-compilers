@@ -51,27 +51,17 @@ fn compile(json: []const u8) !AsmResult {
     const instructions = try asmMap.deepCopyJsonObject(allocator, parsed.value);
     defer asmMap.freeTACCopy(allocator, instructions);
 
-    // 2. Run codegen
     var asm_lines = try asmMap.generateASMInstr(allocator, instructions);
-    // Create the asm file
 
     defer {
         for (asm_lines.items) |line| allocator.free(line);
         asm_lines.deinit(allocator);
     }
 
-    // Header Boiler plate
-    try asm_lines.insert(allocator, 0, try allocator.dupe(u8, "section .text")); // TODO This is dumb and i hate since
-    try asm_lines.insert(allocator, 1, try allocator.dupe(u8, "global _start")); // since a normal insert of a string literal isnt heap allocated (even though i pass an allocator)
-    try asm_lines.insert(allocator, 2, try allocator.dupe(u8, "")); // there is nothing to free
-    try asm_lines.insert(allocator, 3, try allocator.dupe(u8, "_start:")); // so the defer above panics and breaks
+    try asmMap.addHeaderAndFootertoASM(allocator, &asm_lines);
 
-    // the move the exit code 60 to the rax reg?
-    try asm_lines.append(allocator, try allocator.dupe(u8, "    mov rax, 60")); // TODO make this dynamic
-    try asm_lines.append(allocator, try allocator.dupe(u8, "    syscall")); // TODO make this dynamic
-
-    // 3. Join lines into a single buffer allocated with c_allocator
-    //    so Rust can hand it back to tac_free_result safely.
+    // Join lines into a single buffer allocated with c_allocator
+    // so Rust can hand it back to tac_free_result safely.
 
     // TODO Add the spaces in under the start tag even though it isnt required
     var total: usize = 0;

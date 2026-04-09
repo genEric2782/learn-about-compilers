@@ -35,6 +35,5 @@ class Program
         // Console.WriteLine(JsonSerializer.Serialize(ast, options));
 
 
-        // TODO: Write to Json file
     }
 }

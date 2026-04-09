@@ -109,33 +109,11 @@ fn build_csharp(root: &Path, libs_dir: &Path) {
     );
 
     let publish_dir = proj.join("bin/Release/net8.0/linux-x64/publish");
-
-    // AssemblyName is "liblearn-to-compile-c-sharp" so NativeAOT produces
-    // liblearn-to-compile-c-sharp.so  (the lib prefix is already in the name)
-    let candidates = [
-        publish_dir.join("liblearn-to-compile-c-sharp.so"),  // ← correct one
-        publish_dir.join("learn-to-compile-c-sharp.so"),
-    ];
-
-    let so = candidates
-        .iter()
-        .find(|p| p.exists())
-        .unwrap_or_else(|| {
-            // Print what's actually there so future errors are obvious
-            println!("cargo:warning=C# publish dir contents:");
-            if let Ok(entries) = fs::read_dir(&publish_dir) {
-                for entry in entries.flatten() {
-                    println!("cargo:warning=  {}", entry.path().display());
-                }
-            }
-            panic!(
-                "C# NativeAOT .so not found in {}",
-                publish_dir.display()
-            )
-        });
+    let so = publish_dir.join("liblearn-to-compile-c-sharp.so");
 
     copy_to_libs(&so, libs_dir);
 
+    watch_dir(&proj.join("src"), "cs");
     println!("cargo:rerun-if-changed={}", proj.join("**/*.cs").display());
 }
 
@@ -158,7 +136,7 @@ fn build_haskell(root: &Path, libs_dir: &Path) {
     // ghc --print-libdir returns something like:
     //   /home/generic/.ghcup/ghc/9.10.3/lib/ghc-9.10.3/lib
     // We need to find libHSrts-*.so inside the rts subdirectory
-    println!("cargo:warning=GHC libdir: {ghc_libdir}");
+    // println!("cargo:warning=GHC libdir: {ghc_libdir}");
 
     let (rts_name, rts_dir) = find_rts_lib(&ghc_libdir).unwrap_or_else(|| {
         panic!(
@@ -216,6 +194,7 @@ fn build_haskell(root: &Path, libs_dir: &Path) {
     println!("cargo:rustc-link-arg=-Wl,-rpath,{ghc_libdir}");
     println!("cargo:rustc-link-lib=dylib={rts_name}");
 
+    watch_dir(&proj.join("src"), "hs");
     println!("cargo:rerun-if-changed={}", proj.join("src/ReadAST.hs").display());
 }
 
@@ -314,23 +293,6 @@ fn build_scala(root: &Path, libs_dir: &Path) {
     //     }
     // }
 
-    // Graal nativeImage for a shared lib typically produces a .so but the
-    // name comes from your build.sbt nativeImageName setting
-    // let candidates = [
-    //     native_image_dir.join("learn-about-compilers-scala.so"),
-    //     native_image_dir.join("liblearn-about-compilers-scala.so"),
-    //     native_image_dir.join("learn-to-compile-IR-tac-scala.so"),
-    // ];
-
-    // let so = candidates
-    //     .iter()
-    //     .find(|p| p.exists())
-    //     .unwrap_or_else(|| {
-    //         panic!(
-    //             "Scala nativeImage .so not found in {}. Check cargo:warning lines above.",
-    //             native_image_dir.display()
-    //         )
-    //     });
 
     // Graal omits the lib prefix — rename to liblearn-about-compilers-scala.so
     // so that rustc's dylib=learn-about-compilers-scala directive resolves correctly
@@ -340,6 +302,7 @@ fn build_scala(root: &Path, libs_dir: &Path) {
 
     copy_to_libs(&so_renamed, libs_dir);
 
+    watch_dir(&proj.join("src"), "scala");
     println!("cargo:rerun-if-changed={}", proj.join("src").display());
 
 }
@@ -365,6 +328,7 @@ fn build_go(root: &Path, libs_dir: &Path) {
         copy_to_libs(&header, libs_dir);
     }
 
+    watch_dir(&proj, "go");
     println!("cargo:rerun-if-changed={}", proj.join("*.go").display());
 }
 
@@ -381,6 +345,7 @@ fn build_zig(root: &Path, libs_dir: &Path) {
     let so = proj.join("zig-out/lib/libtac_codegen.so");
     copy_to_libs(&so, libs_dir);
 
+    watch_dir(&proj.join("src"), "zig");
     println!("cargo:rerun-if-changed={}", proj.join("src/ffi.zig").display());
     println!("cargo:rerun-if-changed={}", proj.join("src/asmMap.zig").display());
 }
@@ -426,6 +391,7 @@ fn build_cpp(root: &Path, libs_dir: &Path) {
     );
 
     copy_to_libs(&out_so, libs_dir);
+    watch_dir(&proj, "hpp");
 }
 
 // ── main ──────────────────────────────────────────────────────────────────

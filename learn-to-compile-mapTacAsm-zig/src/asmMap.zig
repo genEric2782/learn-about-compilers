@@ -245,3 +245,15 @@ pub fn generateASMFile(mapped_asm_instructions: std.ArrayList([]const u8)) !void
 
     try writer.flush(); // this is what actually writes all the writer lines to the file
 }
+
+pub fn addHeaderAndFootertoASM(allocator: std.mem.Allocator, asm_lines: *std.ArrayList([]const u8)) !void {
+    // Header Boiler plate
+    try asm_lines.insert(allocator, 0, try allocator.dupe(u8, "section .text")); // TODO This is dumb and i hate since
+    try asm_lines.insert(allocator, 1, try allocator.dupe(u8, "global _start")); // since a normal insert of a string literal isnt heap allocated (even though i pass an allocator)
+    try asm_lines.insert(allocator, 2, try allocator.dupe(u8, "")); // there is nothing to free
+    try asm_lines.insert(allocator, 3, try allocator.dupe(u8, "_start:")); // so the defer above panics and breaks
+
+    // the move the exit code 60 to the rax reg?
+    try asm_lines.append(allocator, try allocator.dupe(u8, "mov rax, 60")); // TODO make this dynamic
+    try asm_lines.append(allocator, try allocator.dupe(u8, "syscall")); // TODO make this dynamic
+}
