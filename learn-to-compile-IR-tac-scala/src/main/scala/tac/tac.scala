@@ -32,7 +32,7 @@ class TACTempGenerator
 object OPCodes extends Enumeration 
 {
     type OPCode = Value 
-    val LOAD_CONSTANT, ADD = Value 
+    val LOAD_CONSTANT, ADD, MINUS, MULTIPLY, DIVIDE = Value 
 
     // This is essentailly taking my enumaeration and converting it to a string for the json library to properly seraailzie
     // the .bimap is creatinga way to convert between the ReadWriter for the enum and the ReadWriter needed for the string

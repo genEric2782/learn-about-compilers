@@ -20,6 +20,9 @@ pub const TACInstruction = struct {
 const OpCode = enum {
     LOAD_CONSTANT,
     ADD,
+    MINUS,
+    MULTIPLY,
+    DIVIDE,
     ERROR,
 };
 
@@ -133,6 +136,15 @@ pub fn determinInstructionOpCode(opcode: []const u8) OpCode {
     }
     if (std.mem.eql(u8, opcode, "ADD")) {
         return OpCode.ADD;
+    }
+    if (std.mem.eql(u8, opcode, "MINUS")) {
+        return OpCode.MINUS;
+    }
+    if (std.mem.eql(u8, opcode, "MULTIPLY")) {
+        return OpCode.MULTIPLY;
+    }
+    if (std.mem.eql(u8, opcode, "DIVIDE")) {
+        return OpCode.DIVIDE;
     } else {
         return OpCode.ERROR;
     }
@@ -181,6 +193,77 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                 if (operand1) |reg1| {
                     if (operand2) |reg2| {
                         asmInstr = try std.fmt.allocPrint(allocator, "add {s}, {s}", .{
+                            reg1.data,
+                            reg2.data,
+                        });
+                        try mappedAsmInstructions.append(allocator, asmInstr);
+                    } else {
+                        return error.MissingValue;
+                    }
+                } else {
+                    return error.MissingValue;
+                }
+                // defer allocator.free(asmInstr);
+
+                std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
+            },
+            OpCode.MINUS => {
+                const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
+                const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
+                // Look for what to instructions are getting added together
+                // since the instructions that are going to be added should be in the map that can just cross reference
+                // Ziggy why no support for multiple bindings on an if stament :(
+                if (operand1) |reg1| {
+                    if (operand2) |reg2| {
+                        asmInstr = try std.fmt.allocPrint(allocator, "sub {s}, {s}", .{
+                            reg1.data,
+                            reg2.data,
+                        });
+                        try mappedAsmInstructions.append(allocator, asmInstr);
+                    } else {
+                        return error.MissingValue;
+                    }
+                } else {
+                    return error.MissingValue;
+                }
+                // defer allocator.free(asmInstr);
+
+                std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
+            },
+            // TODO In A shocking turn of event mul only takes one operand (and assumes the other?)
+            OpCode.MULTIPLY => {
+                const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
+                const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
+                // Look for what to instructions are getting added together
+                // since the instructions that are going to be added should be in the map that can just cross reference
+                // Ziggy why no support for multiple bindings on an if stament :(
+                if (operand1) |reg1| {
+                    if (operand2) |reg2| {
+                        asmInstr = try std.fmt.allocPrint(allocator, "mul {s}, {s}", .{
+                            reg1.data,
+                            reg2.data,
+                        });
+                        try mappedAsmInstructions.append(allocator, asmInstr);
+                    } else {
+                        return error.MissingValue;
+                    }
+                } else {
+                    return error.MissingValue;
+                }
+                // defer allocator.free(asmInstr);
+
+                std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
+            },
+            // Gunna go ahead and guess this is like mul i could do a 5 second google but where is the fun in that
+            OpCode.DIVIDE => {
+                const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
+                const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
+                // Look for what to instructions are getting added together
+                // since the instructions that are going to be added should be in the map that can just cross reference
+                // Ziggy why no support for multiple bindings on an if stament :(
+                if (operand1) |reg1| {
+                    if (operand2) |reg2| {
+                        asmInstr = try std.fmt.allocPrint(allocator, "div {s}, {s}", .{
                             reg1.data,
                             reg2.data,
                         });

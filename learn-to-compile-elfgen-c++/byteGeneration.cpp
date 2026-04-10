@@ -193,6 +193,112 @@ std::vector<std::vector<std::string>> generateInstructionBytes(std::vector<std::
                                 
                             }
                         }
+                        break;
+                    case Instructions::sub:
+                        // add opcode changes depending on what is being added :( 
+                        if (intruction_type_map.size() == 2) // add takes two operands so map should always only be instr op op
+                        {
+                            // The add operation also has a mode field which changes depending on whats getting added 
+                            // 00 - memory, no displacement 
+                            // 01 - mem, 8bit signed displacement
+                            // 10 - mem, 32bit signed displacement
+                            // 11 - reg direct mode i.e. both operands are registers 
+
+                            // For command add reg reg 
+                            if(std::get<0>(intruction_type_map[0]) == instructionType::register_name && std::get<0>(intruction_type_map[1]) == instructionType::register_name)
+                            {
+                                const uint8_t sub_two_reg = 0x29; //opcode for subtracting 64bit registers
+                                std::string sub_two_reg_string = convertToHexString(sub_two_reg);
+
+                                const uint8_t sub_mod_value = 0x03; // register direct mode meaning utilazing to reg instead of liek reg and literal 
+                                std::string reg1_string =  convertToHexString(std::get<1>(intruction_type_map[0]));
+                                std::string reg2_string =  convertToHexString(std::get<1>(intruction_type_map[1]));
+                                // the ModR/M byte is for insturctions and specifies the operanrds for an instruction 
+                                int mod_r_m_reg = ModR_M_Set(sub_mod_value, std::get<1>(intruction_type_map[0]), std::get<1>(intruction_type_map[1]));
+                                std::string mod_r_m_reg_string = convertToHexString(mod_r_m_reg);
+
+                                std::vector<std::string> line;
+                                line.push_back(rexByteString);
+                                line.push_back(sub_two_reg_string);
+                                line.push_back(mod_r_m_reg_string);
+                                bytestring.push_back(line);
+
+                                std::cout << "This is the add instruction as Bytes: " << rexByteString << sub_two_reg_string << mod_r_m_reg_string << std::endl;
+                                
+                            }
+                        }
+
+                        break;
+                    // TODO: Multiplication
+                    case Instructions::mul:
+                        // add opcode changes depending on what is being added :( 
+                        if (intruction_type_map.size() == 2) // add takes two operands so map should always only be instr op op
+                        {
+                            // The add operation also has a mode field which changes depending on whats getting added 
+                            // 00 - memory, no displacement 
+                            // 01 - mem, 8bit signed displacement
+                            // 10 - mem, 32bit signed displacement
+                            // 11 - reg direct mode i.e. both operands are registers 
+
+                            // For command add reg reg 
+                            if(std::get<0>(intruction_type_map[0]) == instructionType::register_name && std::get<0>(intruction_type_map[1]) == instructionType::register_name)
+                            {
+                                const uint8_t add_two_reg = 0x01; //opcode
+                                std::string add_two_reg_string = convertToHexString(add_two_reg);
+
+                                const uint8_t add_mod_value = 0x03; // register direct mode meaning utilazing to reg instead of liek reg and literal 
+                                std::string reg1_string =  convertToHexString(std::get<1>(intruction_type_map[0]));
+                                std::string reg2_string =  convertToHexString(std::get<1>(intruction_type_map[1]));
+                                // the ModR/M byte is for insturctions and specifies the operanrds for an instruction 
+                                int mod_r_m_reg = ModR_M_Set(add_mod_value, std::get<1>(intruction_type_map[0]), std::get<1>(intruction_type_map[1]));
+                                std::string mod_r_m_reg_string = convertToHexString(mod_r_m_reg);
+
+                                std::vector<std::string> line;
+                                line.push_back(rexByteString);
+                                line.push_back(add_two_reg_string);
+                                line.push_back(mod_r_m_reg_string);
+                                bytestring.push_back(line);
+
+                                std::cout << "This is the add instruction as Bytes: " << rexByteString << add_two_reg_string << mod_r_m_reg_string << std::endl;
+                                
+                            }
+                        }
+
+                        break;
+                    // TODO: Division
+                    case Instructions::div:
+                        // add opcode changes depending on what is being added :( 
+                        if (intruction_type_map.size() == 2) // add takes two operands so map should always only be instr op op
+                        {
+                            // The add operation also has a mode field which changes depending on whats getting added 
+                            // 00 - memory, no displacement 
+                            // 01 - mem, 8bit signed displacement
+                            // 10 - mem, 32bit signed displacement
+                            // 11 - reg direct mode i.e. both operands are registers 
+
+                            // For command add reg reg 
+                            if(std::get<0>(intruction_type_map[0]) == instructionType::register_name && std::get<0>(intruction_type_map[1]) == instructionType::register_name)
+                            {
+                                const uint8_t add_two_reg = 0x01; //opcode
+                                std::string add_two_reg_string = convertToHexString(add_two_reg);
+
+                                const uint8_t add_mod_value = 0x03; // register direct mode meaning utilazing to reg instead of liek reg and literal 
+                                std::string reg1_string =  convertToHexString(std::get<1>(intruction_type_map[0]));
+                                std::string reg2_string =  convertToHexString(std::get<1>(intruction_type_map[1]));
+                                // the ModR/M byte is for insturctions and specifies the operanrds for an instruction 
+                                int mod_r_m_reg = ModR_M_Set(add_mod_value, std::get<1>(intruction_type_map[0]), std::get<1>(intruction_type_map[1]));
+                                std::string mod_r_m_reg_string = convertToHexString(mod_r_m_reg);
+
+                                std::vector<std::string> line;
+                                line.push_back(rexByteString);
+                                line.push_back(add_two_reg_string);
+                                line.push_back(mod_r_m_reg_string);
+                                bytestring.push_back(line);
+
+                                std::cout << "This is the add instruction as Bytes: " << rexByteString << add_two_reg_string << mod_r_m_reg_string << std::endl;
+                                
+                            }
+                        }
 
                         break;
                     default:

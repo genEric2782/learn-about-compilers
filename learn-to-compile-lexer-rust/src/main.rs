@@ -26,7 +26,17 @@ mod ir;
 // }
 
 fn main() {
-    let input = "7 + 5"; // Test string 
+    // Test via VAR
+    let input = "7 - 5"; // Test string 
+
+    // Test Via User INPUT 
+    // let mut user_input = String::new();
+
+    // io::stdin()
+    //     .read_line(&mut user_input)
+    //     .expect("Failed to read line");
+
+    // let input = user_input.trim();
     // let mut stdout = io::stdout();
 
     // Lexing Tokens

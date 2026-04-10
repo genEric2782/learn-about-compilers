@@ -50,6 +50,62 @@ func (vm *VM) Run() {
 			// ADD doesnt do the vm.ip++ becuase ip get incremented before switch and Add doesnt add onto the stack like LOAD_CONSTANT does
 			// or there is no argument in the bytecode list for add since its adding 2 things from the stack
 			vm.stack.Push(intVal + intVal2)
+		case MINUS:
+			val2, ok := vm.stack.Pop()
+			val1, ok2 := vm.stack.Pop()
+			if !ok && !ok2 {
+				panic("Something went wrong during pop operation")
+			}
+			byteVal, ok := val1.(byte)
+			if !ok {
+				panic("Value 1 was not a byte")
+			}
+			byteVal2, ok2 := val2.(byte)
+			if !ok {
+				panic("Value 2 was not a byte")
+			}
+			intVal := int(byteVal)
+			intVal2 := int(byteVal2)
+
+			// SUB doesnt do the vm.ip++ becuase ip get incremented before switch and Add doesnt add onto the stack like LOAD_CONSTANT does
+			// or there is no argument in the bytecode list for add since its adding 2 things from the stack
+			vm.stack.Push(intVal - intVal2)
+		case MULTIPLY:
+			val2, ok := vm.stack.Pop()
+			val1, ok2 := vm.stack.Pop()
+			if !ok && !ok2 {
+				panic("Something went wrong during pop operation")
+			}
+			byteVal, ok := val1.(byte)
+			if !ok {
+				panic("Value 1 was not a byte")
+			}
+			byteVal2, ok2 := val2.(byte)
+			if !ok {
+				panic("Value 2 was not a byte")
+			}
+			intVal := int(byteVal)
+			intVal2 := int(byteVal2)
+
+			vm.stack.Push(intVal * intVal2)
+		case DIVIDE:
+			val2, ok := vm.stack.Pop()
+			val1, ok2 := vm.stack.Pop()
+			if !ok && !ok2 {
+				panic("Something went wrong during pop operation")
+			}
+			byteVal, ok := val1.(byte)
+			if !ok {
+				panic("Value 1 was not a byte")
+			}
+			byteVal2, ok2 := val2.(byte)
+			if !ok {
+				panic("Value 2 was not a byte")
+			}
+			intVal := int(byteVal)
+			intVal2 := int(byteVal2)
+
+			vm.stack.Push(intVal / intVal2)
 		case PRINT:
 			// TODO: this needs to be way more dynamic can't just assume the value at the top of the stack is the value i want to print
 			val, ok := vm.stack.Pop()

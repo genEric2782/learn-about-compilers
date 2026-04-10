@@ -37,6 +37,15 @@ def evaluateExpression(op, num1, num2):
     if op == '+':
         result = num1 + num2
         return result
+    if op == '-':
+        result = num1 - num2
+        return result
+    if op == '*':
+        result = num1 * num2
+        return result
+    if op == '/':
+        result = num1 / num2
+        return result
 
 def evaluateAST(preFixList):
 
@@ -49,7 +58,7 @@ def evaluateAST(preFixList):
             op = preFixList[iter] 
             if (iter + 1) <= len(preFixList) and isInt(preFixList[iter + 1]):
                 if (iter + 2) <= len(preFixList) and isInt(preFixList[iter + 2]):
-                    if op == '+':
+                    if op == '+' or op == '-' or op == '*' or op == '/':
                       result = evaluateExpression(op, int(preFixList[iter + 1]), int(preFixList[iter + 2]))
                     del preFixList[iter:iter+3] # plus becuase slce in not inclusive 
                     if len(preFixList) == 0:

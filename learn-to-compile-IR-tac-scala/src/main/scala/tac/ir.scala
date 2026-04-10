@@ -69,7 +69,14 @@ class IRConverter
                 // println(jsonString)
                 // os.write.append(outputFilePath, s"${jsonString}\n")
             case TACOp(tmp, o, v1, v2) =>
-                val obj = InstructionMetaData(OPCodes.ADD, instr)
+                val obj = o match {
+                    case "+" => InstructionMetaData(OPCodes.ADD, instr)
+                    case "-" => InstructionMetaData(OPCodes.MINUS, instr)
+                    case "*" => InstructionMetaData(OPCodes.MULTIPLY, instr)
+                    case "/" => InstructionMetaData(OPCodes.DIVIDE, instr) 
+                    case _ =>
+                        throw new Exception("Couldn't match metadata to valid operator")
+                }            
                 // val jsonString: String = upickle.default.write(obj, indent = 4)
                 InstrJsonList.addOne(obj)
                 // println(jsonString)
