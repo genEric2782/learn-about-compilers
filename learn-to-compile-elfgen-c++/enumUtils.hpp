@@ -20,6 +20,9 @@ enum class Instructions
 {
     mov,
     add,
+    sub,
+    mul,
+    div,
     unknown
     // TODO More commands
 };
@@ -30,6 +33,9 @@ struct InstructionEnumUtils
     {
         {"mov", Instructions::mov},
         {"add", Instructions::add},
+        {"sub", Instructions::sub},
+        {"mul", Instructions::mul},
+        {"div", Instructions::div},
         {"unknown", Instructions::unknown}
     };
 

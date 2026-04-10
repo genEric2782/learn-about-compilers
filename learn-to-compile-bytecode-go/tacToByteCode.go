@@ -10,6 +10,9 @@ type Opcode byte
 const (
 	NOP Opcode = iota // identifier that starts the enum at 0
 	ADD
+	MINUS
+	MULTIPLY
+	DIVIDE
 	LOAD_CONSTANT
 	PRINT
 	HALT
@@ -19,6 +22,9 @@ const (
 var opcodeMap = map[string]Opcode{
 	"NOP":           NOP,
 	"ADD":           ADD,
+	"MINUS":         MINUS,
+	"MULTIPLY":      MULTIPLY,
+	"DIVIDE":        DIVIDE,
 	"LOAD_CONSTANT": LOAD_CONSTANT,
 	"PRINT":         PRINT,
 	"HALT":          HALT,
@@ -53,7 +59,7 @@ func tacToByteCode(tac_instructions []Tac) []byte {
 				} else {
 					panic("Something went wrong during the LOAD_CONSTANT Conversion")
 				}
-			case ADD, PRINT, HALT: // might want seperate cases someday for now...
+			case ADD, MINUS, MULTIPLY, DIVIDE, PRINT, HALT: // might want seperate cases someday for now...
 				// fmt.Println("Adding: ", opcode) DEBUG
 				byteCodes = append(byteCodes, byte(opcode))
 

@@ -5,7 +5,8 @@ use serde::Deserialize;
 pub struct TACvar {
     #[serde(rename = "$type")]
     tac_type: String,
-    tacTempValue: String,
+    #[serde(rename = "tacTempValue")]
+    tac_temp_value: String,
     #[serde(default)]
     value: Option<String>,
     #[serde(default)]
