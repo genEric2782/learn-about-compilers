@@ -2,6 +2,7 @@ const std = @import("std");
 const linearscan = @import("linearscan.zig");
 const atomicStack = @import("atomicStack.zig");
 const global = @import("global.zig");
+const globalBitSet = @import("globalBitSet.zig");
 
 pub const TACvar = struct {
     @"$type": []const u8,
@@ -151,10 +152,13 @@ pub fn determinInstructionOpCode(opcode: []const u8) OpCode {
 }
 
 pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInstruction) !std.ArrayList([]const u8) {
+    const r_enum = globalBitSet.Register;
     var mappedAsmInstructions = try std.ArrayList([]const u8).initCapacity(allocator, 0);
+    var inserted_instructions: u64 = 0;
     // defer mappedAsmInstructions.deinit(allocator); // TODO: Free here?
 
-    var tacToRegMap = std.StringHashMap(*global.Stack.Node).init(allocator); // defer tacInitalPos.deinit();
+    // var tacToRegMap = std.StringHashMap(*global.Stack.Node).init(allocator); // defer tacInitalPos.deinit();
+    var tacToRegMap = std.StringHashMap(r_enum).init(allocator);
     defer tacToRegMap.deinit(); // TODO: Free here?
 
     // determine life times of IR instructions
@@ -173,10 +177,11 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
         const instrOpCode = determinInstructionOpCode(instruciton.opcode);
         switch (instrOpCode) {
             OpCode.LOAD_CONSTANT => {
-                const reg: *global.Stack.Node = global.asm_stack.pop() orelse return error.EmptyStack; // TODO Need to handle spilling varibale if out of stack space
+                const reg: r_enum = global.register_bit_map.acquireAny() orelse return error.OutOfRegisters; // TODO Need to handle spilling varibale if out of stack space
+                // const reg: *global.Stack.Node = global.asm_stack.pop() orelse return error.EmptyStack; // TODO Need to handle spilling varibale if out of stack space
                 try tacToRegMap.put(instruciton.tacvar.tacTempValue, reg); // .* -> deref
                 asmInstr = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
-                    reg.data,
+                    reg.toString(),
                     instruciton.tacvar.value orelse return error.MissingValue,
                 });
                 // defer allocator.free(asmInstr);
@@ -193,8 +198,8 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                 if (operand1) |reg1| {
                     if (operand2) |reg2| {
                         asmInstr = try std.fmt.allocPrint(allocator, "add {s}, {s}", .{
-                            reg1.data,
-                            reg2.data,
+                            reg1.toString(),
+                            reg2.toString(),
                         });
                         try mappedAsmInstructions.append(allocator, asmInstr);
                     } else {
@@ -216,8 +221,8 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                 if (operand1) |reg1| {
                     if (operand2) |reg2| {
                         asmInstr = try std.fmt.allocPrint(allocator, "sub {s}, {s}", .{
-                            reg1.data,
-                            reg2.data,
+                            reg1.toString(),
+                            reg2.toString(),
                         });
                         try mappedAsmInstructions.append(allocator, asmInstr);
                     } else {
@@ -231,19 +236,49 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                 std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
             },
             // TODO In A shocking turn of event mul only takes one operand (and assumes the other?)
+            // mul takes register and multiplies it with a value in rax
+            // therefore i need to mv val 1 into rax and then * with val2 and store the answer in rax and rdx
+            // so if either of those are taken i need to mv them into other registers
             OpCode.MULTIPLY => {
                 const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
                 const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
-                // Look for what to instructions are getting added together
-                // since the instructions that are going to be added should be in the map that can just cross reference
-                // Ziggy why no support for multiple bindings on an if stament :(
+                // Look for what to instructions are getting multiplied together
+                // Since multiplication expects one of the operands to be in rax
+                // and then sotred in rax and rdx,
+                // Need to check if those reg are in use and if they are save off there contents and then free them
                 if (operand1) |reg1| {
                     if (operand2) |reg2| {
-                        asmInstr = try std.fmt.allocPrint(allocator, "mul {s}, {s}", .{
-                            reg1.data,
-                            reg2.data,
+                        // if rax is already aprat of this mul instruction no need to do this
+                        // TODO: THis is fragile i probably need to account for if rax is reg1 or reg 2 but i dont wanna think about that atm
+                        if (!(reg1 == r_enum.rax or reg2 == r_enum.rax)) {
+                            // if rax isnt free, free it
+                            if (!global.register_bit_map.tryAcquire(r_enum.rax)) {
+                                try moveContentsToFreeRegister(allocator, &tacToRegMap, &inserted_instructions, &mappedAsmInstructions, globalBitSet.Register.rax);
+                            }
+                            // Need to move the value of arg1 into rax so it can be multipled with arg2
+                            asmInstr = try std.fmt.allocPrint(allocator, "mov {s} {s}", .{
+                                r_enum.rax.toString(),
+                                reg1.toString(),
+                            });
+                            try mappedAsmInstructions.append(allocator, asmInstr);
+                        }
+
+                        // Since half the result is stored in rdx need to make sure it is free at well
+                        // TODO Implement a lock flag maybe since rax and rdx cant be used after this multiply?
+                        // TODO: for now only "support 1 mul insturrction" will need to implement storing sutff in memory
+                        // else am going to run out on registers very quickly if having multiple mul instructions
+                        if (!global.register_bit_map.tryAcquire(r_enum.rdx)) {
+                            try moveContentsToFreeRegister(allocator, &tacToRegMap, &inserted_instructions, &mappedAsmInstructions, globalBitSet.Register.rdx);
+                        }
+                        // TODO For now only multiply small values as we currently cant handle outputting numbers that
+                        // overflow into rdx until i implement write in asm :D
+                        const tmp_reg: globalBitSet.Register = if (reg1 == r_enum.rax) reg2 else reg1;
+                        asmInstr = try std.fmt.allocPrint(allocator, "mul {s}", .{
+                            tmp_reg.toString(),
                         });
                         try mappedAsmInstructions.append(allocator, asmInstr);
+
+                        // How to handle the fact that it gets stored in rax:rdx?
                     } else {
                         return error.MissingValue;
                     }
@@ -255,6 +290,7 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                 std.debug.print("Asembly Instruction: {s}\n", .{asmInstr});
             },
             // Gunna go ahead and guess this is like mul i could do a 5 second google but where is the fun in that
+            // TODO
             OpCode.DIVIDE => {
                 const operand1 = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse null;
                 const operand2 = tacToRegMap.get(instruciton.tacvar.arg2 orelse return error.MissingValue) orelse null;
@@ -264,8 +300,8 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
                 if (operand1) |reg1| {
                     if (operand2) |reg2| {
                         asmInstr = try std.fmt.allocPrint(allocator, "div {s}, {s}", .{
-                            reg1.data,
-                            reg2.data,
+                            reg1.toString(),
+                            reg2.toString(),
                         });
                         try mappedAsmInstructions.append(allocator, asmInstr);
                     } else {
@@ -294,7 +330,7 @@ pub fn generateASMInstr(allocator: std.mem.Allocator, tacinstructions: []TACInst
             const reg_with_output = tacToRegMap.get(instruciton.tacvar.arg1 orelse return error.MissingValue) orelse return error.MissingValue;
             const asmOut = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
                 "rdi",
-                reg_with_output.data,
+                reg_with_output.toString(),
             });
             try mappedAsmInstructions.append(allocator, asmOut);
         }
@@ -344,4 +380,21 @@ pub fn addHeaderAndFootertoASM(allocator: std.mem.Allocator, asm_lines: *std.Arr
     // the move the exit code 60 to the rax reg?
     try asm_lines.append(allocator, try allocator.dupe(u8, "mov rax, 60")); // TODO make this dynamic
     try asm_lines.append(allocator, try allocator.dupe(u8, "syscall")); // TODO make this dynamic
+}
+
+pub fn moveContentsToFreeRegister(allocator: std.mem.Allocator, tacToRegMap: *std.StringHashMap(globalBitSet.Register), inserted_instructions: *u64, mappedAsmInstructions: *std.ArrayList([]const u8), register_to_free: globalBitSet.Register) !void {
+    const reg_store: globalBitSet.Register = global.register_bit_map.acquireAny() orelse return error.OutOfRegisters;
+
+    inserted_instructions.* += 1;
+    const inserted_instructions_string = try std.fmt.allocPrint(allocator, "i{}", .{inserted_instructions});
+    defer allocator.free(inserted_instructions_string);
+    try tacToRegMap.put(inserted_instructions_string, reg_store); // .* -> deref
+
+    const asmInstr = try std.fmt.allocPrint(allocator, "mov {s}, {s}", .{
+        reg_store.toString(),
+        register_to_free.toString(),
+    });
+    try mappedAsmInstructions.append(allocator, asmInstr);
+
+    // global.register_bit_map.release(register_to_free);
 }
