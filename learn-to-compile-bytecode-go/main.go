@@ -12,13 +12,13 @@ func main() {
 		return
 	}
 
-	byte_codes := tacToByteCode(tac)
+	// byte_codes := tacToByteCode(tac)
 
 	// will need to add these to tac in future but as these are not part of the asm code itll get a little tricky....
-	byte_codes = append(byte_codes, byte(PRINT))
-	byte_codes = append(byte_codes, byte(HALT))
+	tac = append(tac, Tac{Opcode: "PRINT"})
+	tac = append(tac, Tac{Opcode: "HALT"})
 
-	vm := NewVM(byte_codes)
+	vm := NewVM(tacToByteCode(tac))
 	vm.Run()
 
 	// // Sanity check

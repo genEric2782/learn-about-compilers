@@ -30,38 +30,43 @@ var opcodeMap = map[string]Opcode{
 	"HALT":          HALT,
 }
 
-func convertStringToByte(s string) (byte, error) {
+func convertStringToInt(s string) (int, error) {
 
-	n, err := strconv.Atoi(s)
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return 0, err
-	}
+	// n, err := strconv.Atoi(s)
+	// if err != nil {
+	// 	fmt.Println("Error: ", err)
+	// 	return 0, err
+	// }
 
-	b := byte(n)
+	// b := byte(n)
 
-	return b, nil
+	return strconv.Atoi(s)
 }
 
-func tacToByteCode(tac_instructions []Tac) []byte {
+func tacToByteCode(tac_instructions []Tac) []Instruction {
 
-	var byteCodes []byte
+	var instructions []Instruction
 
 	for _, instruction := range tac_instructions {
 		if opcode, ok := opcodeMap[instruction.Opcode]; ok {
 			switch opcode {
 			case LOAD_CONSTANT:
-				byteCodes = append(byteCodes, byte(opcode))
-				b, err := convertStringToByte(instruction.Tacvar.Value)
-				if err == nil {
+				// byteCodes = append(byteCodes, byte(opcode))
+				b, err := convertStringToInt(instruction.Tacvar.Value)
+				if err != nil {
 					// fmt.Println("Adding: ", opcode) DEBUG
-					byteCodes = append(byteCodes, b)
-				} else {
 					panic("Something went wrong during the LOAD_CONSTANT Conversion")
 				}
+				instructions = append(instructions, Instruction{
+					Op:   opcode,
+					data: []Value{Value(b)},
+				})
 			case ADD, MINUS, MULTIPLY, DIVIDE, PRINT, HALT: // might want seperate cases someday for now...
 				// fmt.Println("Adding: ", opcode) DEBUG
-				byteCodes = append(byteCodes, byte(opcode))
+				instructions = append(instructions, Instruction{
+					Op:   opcode,
+					data: nil,
+				})
 
 			default:
 				fmt.Println("Unknown Something")
@@ -71,5 +76,5 @@ func tacToByteCode(tac_instructions []Tac) []byte {
 		}
 	}
 
-	return byteCodes
+	return instructions
 }
