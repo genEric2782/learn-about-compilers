@@ -10,6 +10,8 @@ import (
 	"fmt"
 )
 
+// Just running the VM
+//
 //export ReadTacFromFfi
 func ReadTacFromFfi(input *C.char) {
 
@@ -38,5 +40,48 @@ func ReadTacFromFfi(input *C.char) {
 	tac = append(tac, Tac{Opcode: "HALT"})
 
 	vm := NewVM(tacToByteCode(tac))
+	vm.Run()
+}
+
+//export SerializeFfi
+func SerializeFfi(input *C.char, outputPath *C.char) {
+	tacJsonStr := C.GoString(input)
+	path := C.GoString(outputPath)
+
+	var tac []Tac
+	err := json.Unmarshal([]byte(tacJsonStr), &tac)
+	if err != nil {
+		fmt.Println("Error Parsing Json: ", err)
+		return
+	}
+
+	tac = append(tac, Tac{Opcode: "PRINT"})
+	tac = append(tac, Tac{Opcode: "HALT"})
+
+	for i, entry := range tac {
+		fmt.Println("Instruction", i, "Opcode:", entry.Opcode)
+
+		// Just print raw tacvar for now
+		fmt.Println("Raw tacvar:", entry.Tacvar)
+	}
+
+	instructions := tacToByteCode(tac)
+	err = Serialize(instructions, path)
+	if err != nil {
+		fmt.Println("Error writing executable: ", err)
+	}
+}
+
+//export DeserializeFfi
+func DeserializeFfi(outputPath *C.char) {
+	path := C.GoString(outputPath)
+
+	instructions, err := Deserialize(path)
+	if err != nil {
+		fmt.Println("Error reading executable: ", err)
+		return
+	}
+
+	vm := NewVM(instructions)
 	vm.Run()
 }

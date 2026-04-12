@@ -1,5 +1,5 @@
 use crate::r#extern::extern_cpp::compile_from_asm;
-use crate::r#extern::extern_go::ReadTacFromFfi;
+use crate::r#extern::extern_go::{SerializeFfi, DeserializeFfi};
 use crate::r#extern::extern_hs::{hs_exit, hs_init, readAST};
 use crate::r#extern::extern_py::evaluate_ast_with_python;
 use crate::r#extern::extern_sc::ScalaAstProcessor;
@@ -107,29 +107,48 @@ fn main() {
 
                 // DEBUG
                 println!("-----------TAC-INSTRUCTIONS------------------");
+                println!("\n");
                 for instr in &tac_instructions {
                     println!("{:?}", instr);
                 }
                 println!("-----------END-OF-TAC-INSTRUCTIONS----------");
+                println!("\n");
 
                 let c_tac = CString::new(&result[..]).unwrap(); // need to convert String to &str
-                // Bytecode Generation
+                let c_bytecode_path = CString::new("output_b").unwrap();
+                // Bytecode Generation - Just running the VM
+                // println!("-----------BYTECODE-----------------------");
+                // println!("\n");
+                // unsafe { ReadTacFromFfi(c_tac.as_ptr()); }
+                // println!("-----------END-OF-BYTECODE----------------");
+                // println!("\n");
+
+                // Bytecode Generation - Generaiting output file and decompile
                 println!("-----------BYTECODE-----------------------");
-                unsafe { ReadTacFromFfi(c_tac.as_ptr()); }
+                println!("\n");
+                println!("-----------Serialize-----------------------");
+                println!("\n");
+                unsafe { SerializeFfi(c_tac.as_ptr(), c_bytecode_path.as_ptr()); }
+                println!("-----------Deserialize-----------------------");
+                println!("\n");
+                unsafe { DeserializeFfi(c_bytecode_path.as_ptr()); }
                 println!("-----------END-OF-BYTECODE----------------");
+                println!("\n");
 
                 // Assembly Generation
                 match compile(&result) {
                     Ok(asm) => {
                         // For Debugging 
                         println!("-----------START-OF-ASSEMBLY----------------");
+                        println!("\n");
                         println!("Generated assembly:\n{asm}");
                         println!("-----------END-OF-ASSEMBLY------------------");
+                        println!("\n");
                         // optional compile and run assembly 
 
                         // Coverstion to Elf 
                         match compile_from_asm(&asm, "output_a") {
-                            Ok(()) => println!("Elf Written to output"),
+                            Ok(()) => println!("Elf Written to output \n"),
                             Err(e) => eprintln!("Error: {e}"),
                         }
                         
