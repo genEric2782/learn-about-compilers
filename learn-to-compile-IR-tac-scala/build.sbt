@@ -34,7 +34,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "learn-about-compilers-scala",
     Compile / mainClass := Some("tac.Main"),
-    nativeImageCommand := Seq("nativeImagePath"),
+    nativeImageCommand := Seq(nativeImagePath),
     libraryDependencies ++= Seq(
       munit % Test,
       "com.lihaoyi" %% "upickle" % "3.3.1",
