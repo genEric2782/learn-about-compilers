@@ -183,3 +183,101 @@ impl<'a> Lexer<'a> {
         ptoken
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Mirrors the loop in main.rs: scan until (and including) EOF.
+    fn kinds_of(input: &str) -> Vec<TokenKind> {
+        let mut lexer = Lexer::new(input);
+        let mut kinds = Vec::new();
+        while let Some(token) = lexer.scan_for_token() {
+            let is_eof = token.kind == TokenKind::EOF;
+            kinds.push(token.kind);
+            if is_eof {
+                break;
+            }
+        }
+        kinds
+    }
+
+    #[test]
+    fn tokenizes_single_digit_number() {
+        assert_eq!(kinds_of("7"), vec![TokenKind::Integer(7), TokenKind::EOF]);
+    }
+
+    #[test]
+    fn tokenizes_multi_digit_number() {
+        assert_eq!(kinds_of("42"), vec![TokenKind::Integer(42), TokenKind::EOF]);
+    }
+
+    #[test]
+    fn tokenizes_each_punctuation_kind() {
+        assert_eq!(kinds_of("+"), vec![TokenKind::Plus, TokenKind::EOF]);
+        assert_eq!(kinds_of("-"), vec![TokenKind::Minus, TokenKind::EOF]);
+        assert_eq!(kinds_of("*"), vec![TokenKind::Multiply, TokenKind::EOF]);
+        assert_eq!(kinds_of("/"), vec![TokenKind::Divide, TokenKind::EOF]);
+        assert_eq!(kinds_of("="), vec![TokenKind::Equals, TokenKind::EOF]);
+    }
+
+    #[test]
+    fn tokenizes_addition_expression_with_whitespace() {
+        assert_eq!(
+            kinds_of("7 + 5"),
+            vec![
+                TokenKind::Integer(7),
+                TokenKind::Whitespace,
+                TokenKind::Plus,
+                TokenKind::Whitespace,
+                TokenKind::Integer(5),
+                TokenKind::EOF,
+            ]
+        );
+    }
+
+    #[test]
+    fn tokenizes_subtraction_expression_without_whitespace() {
+        assert_eq!(
+            kinds_of("4-1"),
+            vec![
+                TokenKind::Integer(4),
+                TokenKind::Minus,
+                TokenKind::Integer(1),
+                TokenKind::EOF,
+            ]
+        );
+    }
+
+    #[test]
+    fn tokenizes_multiplication_expression() {
+        assert_eq!(
+            kinds_of("2*2"),
+            vec![
+                TokenKind::Integer(2),
+                TokenKind::Multiply,
+                TokenKind::Integer(2),
+                TokenKind::EOF,
+            ]
+        );
+    }
+
+    #[test]
+    fn flags_unrecognized_characters_as_bad() {
+        assert_eq!(kinds_of("@"), vec![TokenKind::Bad, TokenKind::EOF]);
+    }
+
+    #[test]
+    fn empty_input_returns_only_eof() {
+        assert_eq!(kinds_of(""), vec![TokenKind::EOF]);
+    }
+
+    #[test]
+    fn token_span_covers_the_matched_literal() {
+        let mut lexer = Lexer::new("42");
+        let token = lexer.scan_for_token().unwrap();
+        assert_eq!(token.span.start, 0);
+        assert_eq!(token.span.end, 2);
+        assert_eq!(token.span.literal, "42");
+    }
+}
